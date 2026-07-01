@@ -78,7 +78,7 @@ keeps `node_modules`, `.env`, and any key file out of the repo.)
    `GOOGLE_SERVICE_ACCOUNT_BASE64`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
    (and any optional `*_TAB` overrides).
 
-   > **Login** is validated against the `storecode_details` table in Turso.
+   > **Login** is validated against the `storecode_table` table in Turso.
    > Item lookup and complaint storage use the Google Sheet + Drive.
 4. **Deploy.** Every future `git push` auto-deploys.
 

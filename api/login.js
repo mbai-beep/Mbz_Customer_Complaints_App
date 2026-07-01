@@ -1,5 +1,5 @@
 /* POST /api/login  { storecode, password }  ->  { ok, storecode, storename }
-   Validates the store code against the Turso table `storecode_details`.
+   Validates the store code against the Turso table `storecode_table`.
    Tolerant of the table's column names: it matches the code against any
    column, and uses a store-name-like column for the display name if present. */
 const { query } = require('../lib/turso');
@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
   const code = String(storecode).trim();
   try {
-    const { rows } = await query('SELECT * FROM storecode_details');
+    const { rows } = await query('SELECT * FROM storecode_table');
 
     // find the row whose store-code column equals the entered code
     let match = null, matchCol = null;
