@@ -448,7 +448,7 @@ $("loginForm").addEventListener("submit", async e=>{
   const btn = e.target.querySelector("button"); btn.textContent="Signing in…"; btn.disabled=true;
   const res = await API.login(code,pwd);
   btn.textContent="Sign In"; btn.disabled=false;
-  if(!res || !res.ok){ $("loginErr").textContent="Login failed. Check store code."; return; }
+  if(!res || !res.ok){ $("loginErr").textContent=(res && res.error) ? res.error : "Login failed. Check store code."; return; }
   STORE.storecode = res.storecode; STORE.storename = res.storename; STORE.complaints = [];
   $("tbStoreName").textContent = STORE.storename;
   $("tbStoreCode").textContent = STORE.storecode;
