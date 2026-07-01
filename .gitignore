@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# secrets — NEVER commit the service account key or env files
+.env
+.env.*
+*.pem
+*service-account*.json
+*credentials*.json
+secure/
+
+# vercel
+.vercel
+
+# os / editor
+.DS_Store
+Thumbs.db
