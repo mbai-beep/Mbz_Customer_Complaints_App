@@ -151,6 +151,7 @@
   .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .pill.pending{background:#fdf0d5;color:#8a6100}
   .pill.approved{background:#e3f4ea;color:var(--ok)}
+  .pill.rejected{background:#fbe3e3;color:var(--danger)}
   .complaint .body{display:flex;gap:12px;margin-top:10px}
   .complaint .body img{width:60px;height:60px;border-radius:9px;object-fit:cover;background:#eee;flex-shrink:0}
   .complaint .kv{font-size:12.5px;color:var(--muted);display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
@@ -289,22 +290,9 @@
             <div class="help">Tap a slot to capture from mobile camera or choose from gallery.</div>
           </div>
 
-          <div class="field">
-            <label class="req">Approval Manager <span class="man-badge">required</span></label>
-            <select id="approver" required>
-              <option value="">— Select approving manager —</option>
-              <option>Chetna</option>
-              <option>Sunder</option>
-              <option>Prapti</option>
-            </select>
+          <div class="field full">
+            <p class="help" style="margin:0">Approval Manager, Remarks, Challan No and Debit/Purchase Return No are completed by the Manager in the <b>All Complaints History</b> section.</p>
           </div>
-          <div class="field">
-            <label>Remarks <span class="man-badge">manual</span></label>
-            <input id="remarks" placeholder="Any remarks">
-          </div>
-
-          <div class="field"><label>Challan No</label><input id="challanNo" placeholder="Challan number"></div>
-          <div class="field"><label>Debit No / Purchase Return No</label><input id="debitNo" placeholder="Debit / PR number"></div>
         </div>
 
         <div class="row-actions">
@@ -321,7 +309,7 @@
     <div class="card" style="padding:14px 16px">
       <span class="section-tag">SECTION 2 · COMPLAINTS HISTORY</span>
       <h2>All Complaints &amp; Follow-up</h2>
-      <p class="desc">Follow up on submitted complaints — add Color, Reason and Remarks, then print.</p>
+      <p class="desc">Managers review complaints here — set approval &amp; status, add colour/reason/remarks, challan and debit/PR no, then print.</p>
     </div>
     <div class="search-bar">
       <input id="searchInput" placeholder="Search by Ticket ID, Item ID or Article No…" oninput="renderHistory()">
@@ -330,17 +318,26 @@
   </div>
 </div>
 
-<!-- followup modal -->
+<!-- manager review modal -->
 <div id="followupModal" class="modal-back hidden">
   <div class="modal">
-    <h3>Add Follow-up</h3>
+    <h3>Manager Review</h3>
     <input type="hidden" id="fuTicket">
-    <div class="field"><label>Color Name</label><input id="fuColor" placeholder="Color name"></div>
-    <div class="field"><label>Reason</label><textarea id="fuReason" rows="2" placeholder="Follow-up reason"></textarea></div>
+    <div class="field"><label>Approval Manager</label>
+      <select id="fuApprover">
+        <option value="">— Select manager —</option>
+        <option>Chetna</option><option>Sunder</option><option>Prapti</option>
+      </select></div>
+    <div class="field"><label>Status</label>
+      <select id="fuStatus"><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
+    <div class="field"><label>Colour Name</label><input id="fuColor" placeholder="Colour name"></div>
+    <div class="field"><label>Reason</label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
     <div class="field"><label>Remarks</label><textarea id="fuRemarks" rows="2" placeholder="Remarks"></textarea></div>
+    <div class="field"><label>Challan No</label><input id="fuChallan" placeholder="Challan number"></div>
+    <div class="field"><label>Debit No / Purchase Return No</label><input id="fuDebit" placeholder="Debit / PR number"></div>
     <div class="row-actions">
       <button class="btn secondary" onclick="closeFollowup()">Cancel</button>
-      <button class="btn" onclick="saveFollowup()">Save Follow-up</button>
+      <button class="btn" onclick="saveFollowup()">Save Review</button>
     </div>
   </div>
 </div>
@@ -397,12 +394,12 @@ const API = {
     return r.json();
   },
 
-  // 5) Save follow-up details against a complaint (Section 2).
-  async saveFollowup(ticketId, followup){
+  // 5) Save manager review against a complaint (Section 2).
+  async saveFollowup(payload){
     if(USE_MOCK){ await wait(150); return { ok:true }; }
     const r = await fetch(`${API_BASE}/api/followup`,
       {method:"POST",headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({ticketId, ...followup})});
+       body:JSON.stringify(payload)});
     return r.json();
   },
 
@@ -539,14 +536,12 @@ $("imgInput").addEventListener("change", e=>{
 $("complaintForm").addEventListener("submit", async e=>{
   e.preventDefault();
   if(!$("articleNo").value){ toast("Fetch item details before submitting."); return; }
-  if(!$("approver").value){ toast("Select an approving manager."); return; }
   const payload = collectForm();
   const res = await API.submitComplaint(payload);
   if(res && res.ok){
-    STORE.complaints.unshift(payload);   // local cache for history
     toast("Complaint "+payload.ticketId+" submitted.");
     resetForm(); await newTicket();
-  } else { toast("Submit failed. Try again."); }
+  } else { toast("Submit failed: "+((res&&res.error)||"check /api/health")); }
 });
 
 function collectForm(){
@@ -559,8 +554,8 @@ function collectForm(){
     soldDate:$("soldDate").value, soldReturnDate:$("soldReturnDate").value,
     purchasedDate:$("purchasedDate").value, cashmemoNo:$("cashmemoNo").value,
     supplierName:$("supplierName").value, complaintReason:$("complaintReason").value,
-    images:[...currentImages], approver:$("approver").value, remarks:$("remarks").value,
-    challanNo:$("challanNo").value, debitNo:$("debitNo").value,
+    images:[...currentImages], approver:"", remarks:"",
+    challanNo:"", debitNo:"",
     status:"Pending", followup:null
   };
 }
@@ -580,12 +575,20 @@ async function renderHistory(){
   if(!data.length){ list.innerHTML=`<div class="empty">No complaints yet.<br>Submitted complaints appear here for follow-up.</div>`; return; }
   list.innerHTML=data.map(c=>{
     const img=c.images&&c.images[0]?c.images[0]:(c.imageUrl||"");
-    const st=(c.status||"Pending").toLowerCase()==="approved"?"approved":"pending";
-    const fu=c.followup?`<div class="followup-box"><b>Follow-up:</b> Color: ${esc(c.followup.color||'—')} · Reason: ${esc(c.followup.reason||'—')} · Remarks: ${esc(c.followup.remarks||'—')}</div>`:"";
+    const raw=(c.status||"Pending").toLowerCase();
+    const st = raw==="approved"?"approved":(raw==="rejected"?"rejected":"pending");
+    const stLabel = st.charAt(0).toUpperCase()+st.slice(1);
+    const reviewed = c.approver || c.challanNo || c.debitNo || (c.followup && (c.followup.color||c.followup.reason||c.followup.remarks));
+    const fu=reviewed?`<div class="followup-box">
+        <b>Manager Review</b><br>
+        Approver: ${esc(c.approver||'—')} &nbsp;·&nbsp; Colour: ${esc(c.followup?.color||'—')} &nbsp;·&nbsp; Reason: ${esc(c.followup?.reason||'—')}<br>
+        Remarks: ${esc(c.followup?.remarks||'—')}<br>
+        Challan: ${esc(c.challanNo||'—')} &nbsp;·&nbsp; Debit/PR: ${esc(c.debitNo||'—')}
+      </div>`:"";
     return `<div class="complaint">
       <div class="head">
         <div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div></div>
-        <span class="pill ${st}">${st==='approved'?'Approved':'Pending'}</span>
+        <span class="pill ${st}">${stLabel}</span>
       </div>
       <div class="body">
         ${img?`<img src="${img}">`:""}
@@ -594,12 +597,11 @@ async function renderHistory(){
           <b>Article</b><span>${esc(c.articleNo)}</span>
           <b>Color</b><span>${esc(c.colorName)}</span>
           <b>Reason</b><span>${esc(c.complaintReason)}</span>
-          <b>Approver</b><span>${esc(c.approver)}</span>
         </div>
       </div>
       ${fu}
       <div class="foot">
-        <button class="btn ghost" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>${c.followup?'Edit':'Add'} Follow-up</button>
+        <button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>
         <button class="btn secondary" onclick='printById(${JSON.stringify(c.ticketId)})'>Print</button>
       </div>
     </div>`;
@@ -608,18 +610,25 @@ async function renderHistory(){
 function openFollowup(tid){
   const c=STORE.complaints.find(x=>x.ticketId===tid); if(!c)return;
   $("fuTicket").value=tid;
+  $("fuApprover").value=c.approver||"";
+  $("fuStatus").value=c.status||"Pending";
   $("fuColor").value=c.followup?.color||""; $("fuReason").value=c.followup?.reason||""; $("fuRemarks").value=c.followup?.remarks||"";
+  $("fuChallan").value=c.challanNo||""; $("fuDebit").value=c.debitNo||"";
   $("followupModal").classList.remove("hidden");
 }
 function closeFollowup(){ $("followupModal").classList.add("hidden"); }
 async function saveFollowup(){
   const tid=$("fuTicket").value;
-  const fu={color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value};
-  const res=await API.saveFollowup(tid,fu);
+  const payload={ ticketId:tid, approver:$("fuApprover").value, status:$("fuStatus").value,
+    color:$("fuColor").value, reason:$("fuReason").value, remarks:$("fuRemarks").value,
+    challanNo:$("fuChallan").value, debitNo:$("fuDebit").value };
+  const res=await API.saveFollowup(payload);
   if(res&&res.ok){
-    const c=STORE.complaints.find(x=>x.ticketId===tid); if(c)c.followup=fu;
-    closeFollowup(); renderHistory(); toast("Follow-up saved.");
-  } else toast("Save failed.");
+    const c=STORE.complaints.find(x=>x.ticketId===tid);
+    if(c){ c.approver=payload.approver; c.status=payload.status; c.challanNo=payload.challanNo; c.debitNo=payload.debitNo;
+      c.followup={color:payload.color,reason:payload.reason,remarks:payload.remarks}; }
+    closeFollowup(); renderHistory(); toast("Review saved.");
+  } else toast("Save failed: "+((res&&res.error)||""));
 }
 function printById(tid){ const c=STORE.complaints.find(x=>x.ticketId===tid); if(c)printComplaint(c); }
 
@@ -645,8 +654,8 @@ function printComplaint(c){
       ${row("Article No",c.articleNo)}${row("Color",c.colorName)}${row("Contrast",c.contrast)}${row("Size",c.size)}
       ${row("Sold Date",c.soldDate)}${row("Sold Return Date",c.soldReturnDate)}${row("Purchased Date",c.purchasedDate)}
       ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}
-      ${row("Complaint Reason",c.complaintReason)}${row("Approver",c.approver)}${row("Remarks",c.remarks)}
-      ${row("Challan No",c.challanNo)}${row("Debit / PR No",c.debitNo)}${row("Status",c.status)}
+      ${row("Complaint Reason",c.complaintReason)}${row("Approver",c.approver)}${row("Status",c.status)}
+      ${row("Challan No",c.challanNo)}${row("Debit / PR No",c.debitNo)}
     </table>
     ${imgs?`<h3 style="color:#557e96">Images</h3>${imgs}`:""}
     ${fu}
