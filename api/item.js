@@ -1,25 +1,43 @@
-/* GET /api/item?itemId=...  ->  latest matching item record (or null) */
-const { getRows, TABS, field } = require('../lib/sheets');
+/* GET /api/item?itemId=...  ->  merged item record queried LIVE from SQL Server.
+   One small lookup per view, filtered to the single ItemId (fast, always fresh). */
+const { getPool } = require('../lib/sqlserver');
+
+const SALES = 'SELECT TOP 1 ArticleNo, ColourName, ContrastName, SizeName, CashmemoDt, CashmemoNo, SupplierAlias FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
+const PUR   = 'SELECT TOP 1 PurchaseDt FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id ORDER BY PurchaseDt DESC';
+const PRT   = 'SELECT TOP 1 purreturndate FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id ORDER BY purreturndate DESC';
+
+const d = v => v == null ? '' : (v instanceof Date ? v.toISOString().slice(0, 10) : String(v));
 
 module.exports = async (req, res) => {
   const itemId = String((req.query && req.query.itemId) || '').trim();
   if (!itemId) return res.status(400).json(null);
   try {
-    const { rows } = await getRows(TABS.items);
-    const matches = rows.filter(r => String(field(r, 'ItemID', 'ItemId', 'Item Id')).trim() === itemId);
-    if (!matches.length) return res.json(null);
-    const r = matches[matches.length - 1]; // last row = latest record
+    const pool = await getPool();
+    const run = async (q) => {
+      try { const r = await pool.request().input('id', itemId).query(q); return r.recordset[0] || {}; }
+      catch (e) { return { __error: e.message }; }
+    };
+    const [S, P, R] = await Promise.all([run(SALES), run(PUR), run(PRT)]);
+
+    // if every view errored, surface it
+    if (S.__error && P.__error && R.__error) {
+      return res.status(500).json({ error: S.__error });
+    }
+    // nothing found for this item
+    const nothing = !S.ArticleNo && !S.CashmemoNo && !P.PurchaseDt && !R.purreturndate;
+    if (nothing) return res.json(null);
+
     res.json({
-      articleNo:      field(r, 'ArticleNo', 'Article No', 'Article'),
-      imageUrl:       field(r, 'ImageURL', 'Image URL', 'Image_Url', 'ImageUrl'),
-      colorName:      field(r, 'ColorName', 'Color Name', 'Color'),
-      contrast:       field(r, 'Contrast'),
-      size:           field(r, 'Size'),
-      soldDate:       field(r, 'SoldDate', 'Sold Date', 'Sold_Date'),
-      soldReturnDate: field(r, 'SoldReturnDate', 'Sold Return Date', 'Sold_Return_Date'),
-      purchasedDate:  field(r, 'PurchasedDate', 'Purchased Date', 'Purchased_Date'),
-      cashmemoNo:     field(r, 'CashmemoNo', 'Cashmemo No', 'CashMemoNo'),
-      supplierName:   field(r, 'SupplierName', 'Supplier Name', 'Supplier')
+      articleNo:      S.ArticleNo || '',
+      imageUrl:       '',
+      colorName:      S.ColourName || '',
+      contrast:       S.ContrastName || '',
+      size:           S.SizeName || '',
+      soldDate:       d(S.CashmemoDt),
+      soldReturnDate: d(R.purreturndate),
+      purchasedDate:  d(P.PurchaseDt),
+      cashmemoNo:     S.CashmemoNo || '',
+      supplierName:   S.SupplierAlias || ''
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

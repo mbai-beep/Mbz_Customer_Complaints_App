@@ -1,53 +1,36 @@
-/* GET /api/health  — diagnostic. Visit https://<your-app>/api/health
-   Add ?item=<ItemID>, e.g. /api/health?item=26033105031
-   Reports env vars, Turso reachability, and the sales view schema/sample.
-   Does NOT reveal secret values. Remove this file once everything works. */
+/* GET /api/health  — diagnostic. Add ?item=<ItemId> to test a live lookup.
+   Checks env vars, Turso login table, and the live SQL Server item lookup.
+   Remove this file once everything works. */
 const { query } = require('../lib/turso');
-
-const SALES_VIEW = 'VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID';
+const { getPool } = require('../lib/sqlserver');
 
 module.exports = async (req, res) => {
   const out = {
     hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
     hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
-    hasSpreadsheetId: !!process.env.SPREADSHEET_ID,
-    hasDriveFolderId: !!process.env.DRIVE_FOLDER_ID
+    hasSqlServer: !!process.env.SQL_SERVER,
+    hasSqlUser: !!process.env.SQL_USER,
+    hasSqlPassword: !!process.env.SQL_PASSWORD,
+    sqlDatabase: process.env.SQL_DATABASE || null
   };
 
   try {
     const r = await query('SELECT COUNT(*) AS n FROM storecode_table');
-    out.turso = { status: 'ok', storeCount: r.rows[0] ? r.rows[0].n : null };
-  } catch (e) {
-    out.turso = { status: 'ERROR: ' + e.message };
-  }
+    out.storecodeTable = { status: 'ok', rows: r.rows[0] ? r.rows[0].n : null };
+  } catch (e) { out.storecodeTable = { status: 'ERROR: ' + e.message }; }
 
   try {
-    const t = await query("SELECT name, type FROM sqlite_master WHERE type IN ('table','view') ORDER BY name");
-    out.tursoObjects = t.rows;
-  } catch (e) {
-    out.tursoObjects = 'ERROR: ' + e.message;
-  }
-
-  try {
-    const info = await query('PRAGMA table_info(' + SALES_VIEW + ')');
-    out.salesView = { name: SALES_VIEW, columns: info.rows.map(function (r) { return r.name; }) };
-    try {
-      const c = await query('SELECT COUNT(*) AS n FROM ' + SALES_VIEW);
-      out.salesView.rowCount = c.rows[0] ? c.rows[0].n : null;
-    } catch (e) { out.salesView.rowCount = 'ERROR: ' + e.message; }
-    const sample = await query('SELECT * FROM ' + SALES_VIEW + ' LIMIT 2');
-    out.salesView.sampleRows = sample.rows;
+    const pool = await getPool();
+    out.sqlServer = { status: 'connected' };
     const testItem = (req.query && req.query.item) ? String(req.query.item).trim() : null;
-    if (testItem && sample.cols.length) {
-      const where = sample.cols.map(function (c) { return 'CAST("' + c + '" AS TEXT) = ?'; }).join(' OR ');
-      const args = sample.cols.map(function () { return testItem; });
-      try {
-        const hit = await query('SELECT * FROM ' + SALES_VIEW + ' WHERE ' + where + ' LIMIT 3', args);
-        out.itemLookupTest = { item: testItem, found: hit.rows.length, rows: hit.rows };
-      } catch (e) { out.itemLookupTest = { item: testItem, error: e.message }; }
+    if (testItem) {
+      const q = async (t) => { try { const r = await pool.request().input('id', testItem).query(t); return r.recordset[0] || null; } catch (e) { return { __error: e.message }; } };
+      out.sales = await q('SELECT TOP 1 ArticleNo, ColourName, ContrastName, SizeName, CashmemoDt, CashmemoNo, SupplierAlias FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC');
+      out.purchase = await q('SELECT TOP 1 PurchaseDt FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id ORDER BY PurchaseDt DESC');
+      out.purchaseReturn = await q('SELECT TOP 1 purreturndate FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id ORDER BY purreturndate DESC');
     }
   } catch (e) {
-    out.salesView = { name: SALES_VIEW, status: 'ERROR: ' + e.message };
+    out.sqlServer = { status: 'ERROR: ' + e.message + ' (Vercel may be blocked by the SQL Server firewall)' };
   }
 
   res.status(200).json(out);

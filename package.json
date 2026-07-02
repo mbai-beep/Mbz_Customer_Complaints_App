@@ -1,9 +1,10 @@
 {
   "name": "mbz-customer-complaints-app",
   "version": "1.0.0",
-  "description": "Meena Bazaar Customer Complaints App — Google Sheets database, Google Drive image storage, deployed on Vercel.",
+  "description": "Meena Bazaar Customer Complaints App — Turso login, live SQL Server item lookup, Google Drive images, Vercel.",
   "private": true,
   "dependencies": {
-    "googleapis": "^144.0.0"
+    "googleapis": "^144.0.0",
+    "mssql": "^11.0.1"
   }
 }

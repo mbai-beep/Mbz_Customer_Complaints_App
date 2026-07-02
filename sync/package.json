@@ -1,0 +1,12 @@
+{
+  "name": "mbz-sqlserver-turso-sync",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Syncs item details from SQL Server (zRetailHQ0) views into the Turso item_details table.",
+  "scripts": { "start": "node sync.mjs" },
+  "dependencies": {
+    "mssql": "^11.0.1",
+    "@libsql/client": "^0.14.0"
+  }
+}
