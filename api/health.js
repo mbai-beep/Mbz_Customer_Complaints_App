@@ -15,7 +15,6 @@ module.exports = async (req, res) => {
     }
   };
 
-  // Turso — login only
   try { const r = await query('SELECT COUNT(*) AS n FROM storecode_table'); out.storecodeTable = { status: 'ok', rows: r.rows[0].n }; }
   catch (e) { out.storecodeTable = { status: 'ERROR: ' + e.message }; }
 
@@ -24,19 +23,21 @@ module.exports = async (req, res) => {
     const g = await getRows(TABS.complaints);
     out.googleSheet = { status: 'ok', complaintsTab: TABS.complaints, headers: g.header, existingRows: g.rows.length };
   } catch (e) {
-    out.googleSheet = { status: 'ERROR: ' + e.message + '  — Submit needs: Google env vars set in Vercel, the Sheet shared with the service-account email as Editor, and a "' + TABS.complaints + '" tab with the header row.' };
+    out.googleSheet = { status: 'ERROR: ' + e.message + '  — Submit needs Google env vars set in Vercel, the Sheet shared with the service-account email as Editor, and a "' + TABS.complaints + '" tab with the header row.' };
   }
 
-  // SQL Server item lookup
+  // SQL Server — dump columns/rows from ALL THREE views for the test item
   try {
     const pool = await getPool();
     out.sqlServer = { status: 'connected' };
     const testItem = (req.query && req.query.item) ? String(req.query.item).trim() : null;
     if (testItem) {
-      const q = async (t) => { try { const r = await pool.request().input('id', testItem).query(t); return r.recordset[0] || null; } catch (e) { return { __error: e.message }; } };
-      const s = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId=@id ORDER BY CashmemoDt DESC');
-      out.salesColumns = s && !s.__error ? Object.keys(s) : s;
-      out.salesRow = s;
+      const q = async (t) => { try { const r = await pool.request().input('id', testItem).query(t); return r.recordset[0] || '(no row)'; } catch (e) { return { __error: e.message }; } };
+      out.salesRow  = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId=@id ORDER BY CashmemoDt DESC');
+      out.purchaseRow = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId=@id');
+      out.returnRow   = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId=@id');
+      out.purchaseColumns = (out.purchaseRow && typeof out.purchaseRow === 'object' && !out.purchaseRow.__error) ? Object.keys(out.purchaseRow) : out.purchaseRow;
+      out.returnColumns   = (out.returnRow   && typeof out.returnRow   === 'object' && !out.returnRow.__error) ? Object.keys(out.returnRow)   : out.returnRow;
     }
   } catch (e) {
     out.sqlServer = { status: 'ERROR: ' + e.message };
