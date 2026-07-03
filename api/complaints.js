@@ -1,10 +1,9 @@
 /* /api/complaints
      GET ?storecode=...  -> complaints for the store (from the Google Sheet)
-     POST (payload)      -> upload up to 4 photos to Google Drive, append a row to the Sheet
-   Complaint database = Google Sheet ("Complaints" tab). Photos = Google Drive folder. */
+     POST (payload)      -> upload up to 4 photos to Google Drive, append a row to the Sheet */
 const { Readable } = require('stream');
 const { driveClient, DRIVE_FOLDER_ID } = require('../lib/google');
-const { getRows, appendComplaint, COMPLAINT_HEADERS, TABS, field } = require('../lib/sheets');
+const { getRows, appendComplaint, ensureHeader, COMPLAINT_HEADERS, TABS, field } = require('../lib/sheets');
 
 module.exports = async (req, res) => {
   if (req.method === 'GET') return list(req, res);
@@ -12,7 +11,6 @@ module.exports = async (req, res) => {
   res.status(405).json({ ok: false, error: 'Method not allowed' });
 };
 
-/* upload one base64 data URL to Drive, return a viewable link */
 async function uploadImage(dataUrl, name) {
   if (!dataUrl || !dataUrl.startsWith('data:')) return '';
   const m = dataUrl.match(/^data:(.+?);base64,(.*)$/);
@@ -24,9 +22,8 @@ async function uploadImage(dataUrl, name) {
     fields: 'id', supportsAllDrives: true
   });
   const id = file.data.id;
-  try {
-    await drive.permissions.create({ fileId: id, requestBody: { role: 'reader', type: 'anyone' }, supportsAllDrives: true });
-  } catch (e) { /* org may block public sharing; link still stored */ }
+  try { await drive.permissions.create({ fileId: id, requestBody: { role: 'reader', type: 'anyone' }, supportsAllDrives: true }); }
+  catch (e) { /* org may block public sharing; link still stored */ }
   return `https://drive.google.com/uc?export=view&id=${id}`;
 }
 
@@ -56,6 +53,7 @@ async function create(req, res) {
 async function list(req, res) {
   const code = String((req.query && req.query.storecode) || '').trim();
   try {
+    await ensureHeader();                       // make History self-heal if header was missing
     const { rows } = await getRows(TABS.complaints);
     const data = rows.filter(r => String(field(r, 'StoreCode')).trim() === code).reverse().map(r => {
       const images = ['Image1', 'Image2', 'Image3', 'Image4'].map(k => field(r, k)).filter(Boolean);
