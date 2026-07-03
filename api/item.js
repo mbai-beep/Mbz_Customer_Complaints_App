@@ -1,18 +1,30 @@
-/* GET /api/item?itemId=...  ->  merged item record queried LIVE from SQL Server. */
+/* GET /api/item?itemId=...  ->  merged item record queried LIVE from SQL Server.
+   Reads all three views with SELECT * and picks fields tolerantly, so a single
+   unexpected column name never blanks the whole lookup. */
 const { getPool } = require('../lib/sqlserver');
 
-const SALES = 'SELECT TOP 1 ArticleNo, ColourName, ContrastName, SizeName, CashmemoDt, CashmemoNo, SupplierAlias FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
-const PUR   = 'SELECT TOP 1 PurchaseDt FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id ORDER BY PurchaseDt DESC';
-const PRT   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id';   // pick the return-date col from whatever it is named
+const SALES = 'SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
+const PUR   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id ORDER BY PurchaseDt DESC';
+const PRT   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id';
 
 const d = v => v == null ? '' : (v instanceof Date ? v.toISOString().slice(0, 10) : String(v));
 
-function pickReturnDate(R) {
-  if (!R) return '';
-  // exact known names first
-  for (const k of ['purreturndate', 'PurReturnDt', 'PurReturnDate', 'purreturndt']) if (R[k]) return R[k];
-  // otherwise any column that looks like a return date
-  for (const k of Object.keys(R)) if (/return/i.test(k) && /(dt|date)/i.test(k) && R[k]) return R[k];
+function pick(o, names, rx) {
+  if (!o) return '';
+  for (const n of names) {
+    const k = Object.keys(o).find(k => k.toLowerCase() === n.toLowerCase());
+    if (k && o[k] != null && o[k] !== '') return o[k];
+  }
+  if (rx) for (const k of Object.keys(o)) if (rx.test(k) && o[k] != null && o[k] !== '') return o[k];
+  return '';
+}
+function pickImage(o) {
+  if (!o) return '';
+  for (const n of ['ImageURL', 'ImageUrl', 'Image_Url', 'ImagePath', 'ImageLink', 'Image']) {
+    const k = Object.keys(o).find(k => k.toLowerCase() === n.toLowerCase());
+    if (k && o[k]) return o[k];
+  }
+  for (const k of Object.keys(o)) if (/image|img|photo/i.test(k) && /^https?:\/\//i.test(String(o[k]))) return o[k];
   return '';
 }
 
@@ -28,22 +40,24 @@ module.exports = async (req, res) => {
     const [S, P, R] = await Promise.all([run(SALES), run(PUR), run(PRT)]);
     if (S.__error && P.__error && R.__error) return res.status(500).json({ error: S.__error });
 
-    const returnDate = R.__error ? '' : pickReturnDate(R);
-    const nothing = !S.ArticleNo && !S.CashmemoNo && !P.PurchaseDt && !returnDate;
-    if (nothing) return res.json(null);
+    const s = S.__error ? {} : S, p = P.__error ? {} : P, r = R.__error ? {} : R;
+    const merged = Object.assign({}, r, p, s);   // sales wins on collisions
 
-    res.json({
-      articleNo:      S.ArticleNo || '',
-      imageUrl:       '',
-      colorName:      S.ColourName || '',
-      contrast:       S.ContrastName || '',
-      size:           S.SizeName || '',
-      soldDate:       d(S.CashmemoDt),
-      soldReturnDate: d(returnDate),
-      purchasedDate:  d(P.PurchaseDt),
-      cashmemoNo:     S.CashmemoNo || '',
-      supplierName:   S.SupplierAlias || ''
-    });
+    const out = {
+      articleNo:      pick(s, ['ArticleNo', 'Article No', 'Article'], /article\s*no/i),
+      imageUrl:       pickImage(merged),
+      colorName:      pick(s, ['ColourName', 'ColorName', 'Colour', 'Color']),
+      contrast:       pick(s, ['ContrastName', 'Contrast']),
+      size:           pick(s, ['SizeName', 'Size']),
+      soldDate:       d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'])),
+      soldReturnDate: d(pick(r, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*(dt|date)/i)),
+      purchasedDate:  d(pick(p, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'])),
+      cashmemoNo:     pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo']),
+      supplierName:   pick(merged, ['SupplierAlias', 'SupplierName', 'Supplier'])
+    };
+    const nothing = !out.articleNo && !out.cashmemoNo && !out.purchasedDate && !out.soldReturnDate && !out.colorName;
+    if (nothing) return res.json(null);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

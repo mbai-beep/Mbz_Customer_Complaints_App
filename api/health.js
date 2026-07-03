@@ -1,30 +1,27 @@
 /* GET /api/health  — diagnostic. Add ?item=<ItemId> to test a live lookup.
    Remove this file once everything works. */
-const { query } = require('../lib/turso');
+const { query, batch } = require('../lib/turso');
 const { getPool } = require('../lib/sqlserver');
-const { getRows, TABS } = require('../lib/sheets');
 
 module.exports = async (req, res) => {
   const out = {
     env: {
       turso: !!process.env.TURSO_DATABASE_URL && !!process.env.TURSO_AUTH_TOKEN,
-      sqlServer: !!process.env.SQL_SERVER && !!process.env.SQL_USER,
-      spreadsheetId: !!process.env.SPREADSHEET_ID,
-      driveFolderId: !!process.env.DRIVE_FOLDER_ID,
-      googleCreds: !!(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_SERVICE_ACCOUNT_BASE64)
+      sqlServer: !!process.env.SQL_SERVER && !!process.env.SQL_USER
     }
   };
 
-  // Turso login table
+  // Turso login
   try { const r = await query('SELECT COUNT(*) AS n FROM storecode_table'); out.storecodeTable = { status: 'ok', rows: r.rows[0].n }; }
   catch (e) { out.storecodeTable = { status: 'ERROR: ' + e.message }; }
 
-  // Google Sheet (complaint storage) — this is what "Submit Complaint" writes to
+  // Turso complaints WRITE test — this is what "Submit Complaint" needs.
   try {
-    const g = await getRows(TABS.complaints);
-    out.googleSheet = { status: 'ok', complaintsTab: TABS.complaints, headerCount: g.header.length, existingRows: g.rows.length };
+    await batch([{ sql: 'CREATE TABLE IF NOT EXISTS complaints (ticketid TEXT PRIMARY KEY, storecode TEXT, ticketdate TEXT, storename TEXT, itemid TEXT, articleno TEXT, imageurl TEXT, colorname TEXT, contrast TEXT, size TEXT, solddate TEXT, soldreturndate TEXT, purchaseddate TEXT, cashmemono TEXT, suppliername TEXT, complaintreason TEXT, approver TEXT, remarks TEXT, challanno TEXT, debitno TEXT, status TEXT, followupcolor TEXT, followupreason TEXT, followupremarks TEXT, createdat TEXT)' }]);
+    const c = await query('SELECT COUNT(*) AS n FROM complaints');
+    out.complaintsStore = { status: 'ok (writable)', rows: c.rows[0].n };
   } catch (e) {
-    out.googleSheet = { status: 'ERROR: ' + e.message + ' (submit needs: creds set in Vercel, Sheet shared with the service account, and a "' + TABS.complaints + '" tab)' };
+    out.complaintsStore = { status: 'ERROR: ' + e.message + '  — if this says not authorized/read-only, set TURSO_AUTH_TOKEN in Vercel to a READ-WRITE token.' };
   }
 
   // SQL Server item lookup
@@ -34,10 +31,12 @@ module.exports = async (req, res) => {
     const testItem = (req.query && req.query.item) ? String(req.query.item).trim() : null;
     if (testItem) {
       const q = async (t) => { try { const r = await pool.request().input('id', testItem).query(t); return r.recordset[0] || null; } catch (e) { return { __error: e.message }; } };
-      out.sales = await q('SELECT TOP 1 ArticleNo, ColourName, ContrastName, SizeName, CashmemoDt, CashmemoNo, SupplierAlias FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId=@id ORDER BY CashmemoDt DESC');
-      out.purchase = await q('SELECT TOP 1 PurchaseDt FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId=@id ORDER BY PurchaseDt DESC');
-      out.purchaseReturnRow = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId=@id');
-      out.prtColumns = out.purchaseReturnRow && !out.purchaseReturnRow.__error ? Object.keys(out.purchaseReturnRow) : 'no row / error';
+      const s = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId=@id ORDER BY CashmemoDt DESC');
+      const p = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId=@id ORDER BY PurchaseDt DESC');
+      const r = await q('SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId=@id');
+      out.salesColumns = s && !s.__error ? Object.keys(s) : s;
+      out.purchaseColumns = p && !p.__error ? Object.keys(p) : p;
+      out.returnColumns = r && !r.__error ? Object.keys(r) : r;
     }
   } catch (e) {
     out.sqlServer = { status: 'ERROR: ' + e.message };
