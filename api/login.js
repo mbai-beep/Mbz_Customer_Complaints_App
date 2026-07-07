@@ -1,37 +1,45 @@
-/* POST /api/login  { storecode, password }  ->  { ok, storecode, storename }
-   Validates the store code against the Turso table `storecode_table`.
-   Tolerant of the table's column names: it matches the code against any
-   column, and uses a store-name-like column for the display name if present. */
+/* POST /api/login { storecode, password } -> { ok, storecode, storename, role }
+   Checks the Turso `users` table first (for admin-managed accounts / password changes),
+   then falls back to the default rule password = MBZ+storecode. */
 const { query } = require('../lib/turso');
+const { getUser, roleFor, labelFor } = require('../lib/users');
+
+function pickStoreName(rows, code) {
+  const row = rows.find(r => Object.keys(r).some(k => String(r[k]).trim() === code));
+  if (!row) return 'Store ' + code;
+  const key = Object.keys(row).find(k => /store.?name|storename|branch|outlet|name|title/i.test(k) && String(row[k]).trim() !== code && row[k]);
+  return key ? String(row[key]) : 'Store ' + code;
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST only' });
   const { storecode, password } = req.body || {};
-  if (!storecode) return res.json({ ok: false, error: 'Store code required' });
-  // password rule: MBZ + storecode (also enforced in the browser)
-  if (password !== 'MBZ' + storecode) return res.json({ ok: false, error: 'Invalid password' });
+  const code = String(storecode || '').trim();
+  if (!code) return res.json({ ok: false, error: 'Store code required' });
 
-  const code = String(storecode).trim();
   try {
-    const { rows } = await query('SELECT * FROM storecode_table');
+    const role = roleFor(code);
+    const user = await getUser(code);
 
-    // find the row whose store-code column equals the entered code
-    let match = null, matchCol = null;
-    for (const row of rows) {
-      for (const k of Object.keys(row)) {
-        if (row[k] != null && String(row[k]).trim() === code) { match = row; matchCol = k; break; }
-      }
-      if (match) break;
+    // Admin-managed account exists → use its password / enabled flag / role
+    if (user) {
+      if (String(user.enabled) === '0' || String(user.enabled).toLowerCase() === 'false')
+        return res.json({ ok: false, error: 'Account is disabled. Contact admin.' });
+      if (password !== user.password) return res.json({ ok: false, error: 'Invalid password' });
+      return res.json({ ok: true, storecode: code, storename: user.storename || labelFor(user.role || role, code), role: user.role || role });
     }
-    if (!match) return res.json({ ok: false, error: 'Store code not found' });
 
-    // pick a store-name-like column (not the code column) if one exists
-    const nameKey = Object.keys(match).find(
-      k => k !== matchCol && /store.?name|storename|branch|outlet|name|title/i.test(k) && match[k]
-    );
-    const storename = nameKey ? String(match[nameKey]) : ('Store ' + code);
+    // No stored account → default rule
+    if (password !== 'MBZ' + code) return res.json({ ok: false, error: 'Invalid password' });
 
-    res.json({ ok: true, storecode: code, storename });
+    if (role === 'store') {
+      const r = await query('SELECT * FROM storecode_table');
+      const found = r.rows.some(row => Object.keys(row).some(k => String(row[k]).trim() === code));
+      if (!found) return res.json({ ok: false, error: 'Store code not found' });
+      return res.json({ ok: true, storecode: code, storename: pickStoreName(r.rows, code), role: 'store' });
+    }
+    // admin / manager default login
+    return res.json({ ok: true, storecode: code, storename: labelFor(role, code), role });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

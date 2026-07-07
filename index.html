@@ -4,150 +4,97 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#7ba6bd">
-<title>Meena Bazaar — Complaint Management</title>
+<title>Meena Bazaar — Customer Complaints</title>
 <style>
   :root{
-    --brand:#7ba6bd;          /* Audit App steel blue */
-    --brand-dark:#557e96;
-    --brand-light:#a9c8d8;
-    --header-grad1:#a9c3d4;   /* card header gradient (top) */
-    --header-grad2:#8fb0c4;
-    --btn-grad1:#9fc0d2;      /* sign-in button gradient */
-    --btn-grad2:#7ba6bd;
-    --gold:#557e96;           /* repurposed: auto-field accent */
-    --login-bg1:#eef4fa;
-    --login-bg2:#dbe8f2;
-    --bg:#f4f6f9;
-    --card:#ffffff;
-    --line:#d9e3ec;
-    --text:#2b3a45;
-    --muted:#6b7c89;
-    --ok:#1d8a4e;
-    --danger:#c0392b;
-    --radius:14px;
-    --shadow:0 4px 18px rgba(40,70,90,.10);
+    --brand:#7ba6bd; --brand-dark:#557e96; --brand-light:#a9c8d8;
+    --header-grad1:#a9c3d4; --header-grad2:#8fb0c4;
+    --btn-grad1:#9fc0d2; --btn-grad2:#7ba6bd;
+    --gold:#557e96; --login-bg1:#eef4fa; --login-bg2:#dbe8f2;
+    --bg:#f4f6f9; --card:#fff; --line:#d9e3ec; --text:#2b3a45; --muted:#6b7c89;
+    --ok:#1d8a4e; --danger:#c0392b; --radius:14px; --shadow:0 4px 18px rgba(40,70,90,.10);
+    --wrap:620px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);color:var(--text);font-size:15px;line-height:1.45;
-    -webkit-text-size-adjust:100%;
-  }
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
   .hidden{display:none !important}
   button{font-family:inherit;cursor:pointer}
   input,select,textarea{font-family:inherit;font-size:15px}
 
-  /* ---------- LOGIN (matches Store Audit App) ---------- */
-  #loginScreen{
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-    padding:42px 20px 30px;
-    background:linear-gradient(170deg,var(--login-bg1) 0%,var(--login-bg2) 100%);
-  }
-  .brand-logo{display:block;width:230px;max-width:62vw;height:auto;margin:6px auto 26px}
-  .login-card{
-    width:100%;max-width:420px;background:var(--card);border-radius:18px;overflow:hidden;
-    box-shadow:0 20px 55px rgba(60,90,120,.22);text-align:left;
-  }
-  .login-head{
-    background:linear-gradient(160deg,var(--header-grad1),var(--header-grad2));
-    color:#fff;text-align:center;padding:22px 20px 24px;
-  }
-  .login-head .logo-badge{
-    width:54px;height:54px;border-radius:14px;margin:0 auto 12px;
-    background:rgba(255,255,255,.28);backdrop-filter:blur(2px);
-    display:flex;align-items:center;justify-content:center;font-size:26px;
-  }
-  .login-head h1{margin:0;font-size:23px;font-weight:800;letter-spacing:.3px}
+  /* LOGIN */
+  #loginScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:42px 16px 30px;background:linear-gradient(170deg,var(--login-bg1),var(--login-bg2))}
+  .brand-logo{display:block;width:230px;max-width:60vw;height:auto;margin:6px auto 24px}
+  .login-card{width:100%;max-width:var(--wrap);background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 20px 55px rgba(60,90,120,.22)}
+  .login-head{background:linear-gradient(160deg,var(--header-grad1),var(--header-grad2));color:#fff;text-align:center;padding:22px 20px 24px}
+  .login-head .logo-badge{width:54px;height:54px;border-radius:14px;margin:0 auto 12px;background:rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:26px}
+  .login-head h1{margin:0;font-size:23px;font-weight:800}
   .login-head .sub{margin:3px 0 0;font-size:13px;opacity:.92}
-  .login-body{padding:26px 28px 22px}
+  .login-body{padding:26px 28px 22px;max-width:420px;margin:0 auto}
   .login-body .welcome{color:var(--brand-dark);font-size:25px;font-weight:800;margin:0 0 2px}
   .login-body .continue{color:var(--text);font-size:14.5px;margin:0 0 20px}
-  .field{text-align:left;margin-bottom:16px}
+  .field{margin-bottom:16px}
   .field label{display:block;font-size:12.5px;font-weight:700;color:#3a4d59;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px}
-  .field input,.field select,.field textarea{
-    width:100%;padding:13px 13px;border:1.5px solid var(--line);border-radius:10px;
-    background:#fff;transition:border-color .15s,box-shadow .15s;outline:none;
-  }
-  .field input:focus,.field select:focus,.field textarea:focus{
-    border-color:var(--brand);box-shadow:0 0 0 3px rgba(123,166,189,.18);background:#fff;
-  }
-  .pwd-wrap{position:relative}
-  .pwd-wrap input{padding-right:44px}
+  .field input,.field select,.field textarea{width:100%;padding:13px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(123,166,189,.18)}
+  .pwd-wrap{position:relative}.pwd-wrap input{padding-right:44px}
   .pwd-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;opacity:.6;padding:4px}
   .pwd-hint{font-size:12px;color:var(--brand-dark);margin:7px 0 0}
-  .pwd-hint b{color:#2b3a45}
   .login-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 18px;font-size:13px}
   .login-row label{display:flex;align-items:center;gap:8px;color:var(--text);cursor:pointer}
   .login-row .forgot{color:var(--danger);font-weight:700;cursor:pointer}
-  .btn{
-    width:100%;padding:14px;border:none;border-radius:11px;font-weight:700;font-size:15.5px;
-    background:linear-gradient(160deg,var(--btn-grad1),var(--btn-grad2));color:#fff;
-    transition:filter .15s,transform .05s;
-  }
-  .btn:hover{filter:brightness(1.05)}
-  .btn:active{transform:translateY(1px)}
+  .btn{width:100%;padding:14px;border:none;border-radius:11px;font-weight:700;font-size:15.5px;background:linear-gradient(160deg,var(--btn-grad1),var(--btn-grad2));color:#fff;transition:filter .15s,transform .05s}
+  .btn:hover{filter:brightness(1.05)}.btn:active{transform:translateY(1px)}
   .btn.secondary{background:#eef2f6;color:var(--text)}
   .btn.ghost{background:transparent;color:var(--brand-dark);border:1.5px solid var(--brand)}
   .btn.gold{background:var(--brand-dark);color:#fff}
+  .btn.danger{background:#f4dede;color:var(--danger);border:1.5px solid #e7b7b7}
   .login-foot{text-align:center;color:var(--brand-dark);font-size:12px;font-weight:700;margin-top:16px;opacity:.85}
   .err{color:var(--danger);font-size:13px;margin-top:12px;min-height:18px;font-weight:600;text-align:center}
 
-  /* ---------- APP SHELL ---------- */
+  /* APP */
   #app{min-height:100vh;display:flex;flex-direction:column}
-  .topbar{
-    background:var(--brand);color:#fff;padding:11px 16px;display:flex;align-items:center;gap:12px;
-    position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.15)
-  }
-  .topbar .mini-logo{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.16);
-    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .topbar{background:var(--brand);color:#fff;padding:11px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .topbar .mini-logo{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:16px}
   .topbar .store{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0}
   .topbar .store b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .topbar .store span{font-size:11.5px;opacity:.85}
+  .role-badge{font-size:10px;font-weight:800;text-transform:uppercase;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:20px;margin-left:6px}
   .topbar .logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px}
-
   .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:20}
-  .tabs button{flex:1;padding:13px 6px;border:none;background:transparent;font-weight:700;font-size:13.5px;color:var(--muted);border-bottom:3px solid transparent}
+  .tabs button{flex:1;padding:13px 6px;border:none;background:transparent;font-weight:700;font-size:13px;color:var(--muted);border-bottom:3px solid transparent}
   .tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
-
-  .page{padding:16px;max-width:920px;margin:0 auto;width:100%;flex:1}
+  .page{padding:16px;max-width:var(--wrap);margin:0 auto;width:100%;flex:1}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
   .card h2{margin:0 0 4px;font-size:16px;color:var(--brand-dark)}
   .card .desc{margin:0 0 16px;color:var(--muted);font-size:13px}
   .section-tag{display:inline-block;background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:10px;letter-spacing:.4px}
-
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .grid .full{grid-column:1/-1}
-  @media(max-width:640px){.grid{grid-template-columns:1fr}}
-
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
   .readonly input,.readonly{background:#f1f2f4 !important;color:#444}
   .ro-badge{font-size:10px;color:var(--gold);font-weight:700;margin-left:6px;text-transform:uppercase}
   .man-badge{font-size:10px;color:var(--brand-light);font-weight:700;margin-left:6px;text-transform:uppercase}
-
   .article-preview{display:flex;gap:14px;align-items:center;background:#eef4fa;border:1px dashed var(--gold);border-radius:12px;padding:12px;margin-top:4px}
   .article-preview img{width:74px;height:74px;object-fit:cover;border-radius:10px;background:#eee;flex-shrink:0}
   .article-preview .meta{font-size:13px}
   .article-preview .meta b{color:var(--brand-dark)}
-
-  /* image uploader */
   .img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
-  @media(max-width:640px){.img-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.img-grid{grid-template-columns:repeat(2,1fr)}}
   .img-slot{position:relative;aspect-ratio:1;border:2px dashed var(--line);border-radius:12px;overflow:hidden;background:#fafafa;display:flex;align-items:center;justify-content:center}
   .img-slot img{width:100%;height:100%;object-fit:cover}
-  .img-slot .rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;width:24px;height:24px;border-radius:50%;font-size:14px;line-height:1}
+  .img-slot .rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;width:24px;height:24px;border-radius:50%;font-size:14px}
   .add-photo{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;text-align:center;width:100%;height:100%;justify-content:center;background:none;border:none}
   .add-photo svg{width:26px;height:26px;stroke:var(--brand-light)}
-
   .row-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .row-actions .btn{width:auto;flex:1;min-width:140px}
-
-  /* history */
+  .row-actions .btn{width:auto;flex:1;min-width:130px}
   .search-bar{display:flex;gap:8px;margin-bottom:14px}
   .search-bar input{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;background:#fff;outline:none}
   .complaint{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
   .complaint .head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .complaint .tid{font-weight:800;color:var(--brand-dark);font-size:14.5px}
   .complaint .when{font-size:11.5px;color:var(--muted)}
+  .complaint .store-tag{font-size:11.5px;color:var(--brand-dark);font-weight:700}
   .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .pill.pending{background:#fdf0d5;color:#8a6100}
   .pill.approved{background:#e3f4ea;color:var(--ok)}
@@ -161,29 +108,30 @@
   .followup-box{background:#eef4fa;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px}
   .followup-box b{color:var(--brand-dark)}
   .empty{text-align:center;color:var(--muted);padding:50px 20px}
-
-  /* modal */
+  .utable{width:100%;border-collapse:collapse;font-size:13px}
+  .utable th,.utable td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .utable th{color:var(--brand-dark);font-size:11.5px;text-transform:uppercase}
+  .utable .mini{padding:6px 10px;font-size:12px;border-radius:8px;border:none;color:#fff;background:var(--brand-dark);width:auto}
+  .utable .mini.off{background:#b56}
   .modal-back{position:fixed;inset:0;background:rgba(15,15,25,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
   .modal{background:#fff;border-radius:16px;width:100%;max-width:440px;padding:22px;max-height:90vh;overflow:auto}
   .modal h3{margin:0 0 14px;color:var(--brand-dark)}
-
-  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1f2430;color:#fff;padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.3);z-index:80;opacity:0;transition:opacity .25s,transform .25s}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1f2430;color:#fff;padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.3);z-index:80;opacity:0;transition:opacity .25s}
+  .toast.show{opacity:1}
   .req:after{content:" *";color:var(--danger)}
   .help{font-size:11px;color:var(--muted);margin-top:4px}
 </style>
 </head>
 <body>
 
-<!-- ========================= LOGIN ========================= -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <img src="meena_bazaar_logo.png" alt="Meena Bazaar" class="brand-logo">
   <div class="login-card">
     <div class="login-head">
       <div class="logo-badge">🛍️</div>
-      <h1>Store Complaint App</h1>
-      <div class="sub">Store Team Portal</div>
+      <h1>Customer Complaint App</h1>
+      <div class="sub">Store / Manager / Admin Portal</div>
     </div>
     <div class="login-body">
       <div class="welcome">Welcome Back</div>
@@ -197,65 +145,57 @@
           <label for="password">Password</label>
           <div class="pwd-wrap">
             <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
-            <button type="button" class="pwd-eye" id="pwdEye" aria-label="Show password">👁️</button>
+            <button type="button" class="pwd-eye" id="pwdEye">👁️</button>
           </div>
           <p class="pwd-hint">First time? Use <b>MBZ&lt;YourStoreCode&gt;</b> (e.g. MBZ1024)</p>
         </div>
         <div class="login-row">
           <label><input type="checkbox" id="rememberMe" checked> Remember me for 30 days</label>
-          <span class="forgot">Forgot Password?</span>
+          <span class="forgot" id="forgotBtn">Forgot Password?</span>
         </div>
         <button class="btn" type="submit">Sign In</button>
         <div class="err" id="loginErr"></div>
       </form>
-      <div class="login-foot">Mbz Complaints · v1 · Store Team App</div>
+      <div class="login-foot">Mbz Complaints · v2 · Store • Manager • Admin</div>
     </div>
   </div>
 </div>
 
-<!-- ========================= APP ========================= -->
+<!-- APP -->
 <div id="app" class="hidden">
   <div class="topbar">
     <div class="mini-logo">🛍️</div>
     <div class="store">
-      <b id="tbStoreName">Store Name</b>
-      <span>Store Code: <span id="tbStoreCode">—</span></span>
+      <b id="tbStoreName">—</b>
+      <span>Code: <span id="tbStoreCode">—</span><span class="role-badge" id="tbRole">store</span></span>
     </div>
     <button class="logout" id="logoutBtn">Logout</button>
   </div>
 
   <div class="tabs">
-    <button id="tabBtn1" class="active" onclick="showTab(1)">Store Team — New Complaint</button>
+    <button id="tabBtn1" onclick="showTab(1)">New Complaint</button>
     <button id="tabBtn2" onclick="showTab(2)">All Complaints History</button>
+    <button id="tabBtn3" class="hidden" onclick="showTab(3)">Admin</button>
   </div>
 
-  <!-- ---------- SECTION 1 ---------- -->
-  <div class="page" id="tab1">
+  <!-- SECTION 1 -->
+  <div class="page hidden" id="tab1">
     <div class="card">
       <span class="section-tag">SECTION 1 · STORE TEAM</span>
       <h2>Raise a New Complaint</h2>
       <p class="desc">Enter the Item ID to auto-fetch product &amp; transaction details, then complete the complaint.</p>
-
       <form id="complaintForm">
         <div class="grid">
-          <div class="field readonly">
-            <label>Ticket ID <span class="ro-badge">auto</span></label>
-            <input id="ticketId" readonly>
-          </div>
-          <div class="field readonly">
-            <label>Ticket Date / Time <span class="ro-badge">auto</span></label>
-            <input id="ticketDate" readonly>
-          </div>
-
+          <div class="field readonly"><label>Ticket ID <span class="ro-badge">auto</span></label><input id="ticketId" readonly></div>
+          <div class="field readonly"><label>Ticket Date / Time <span class="ro-badge">auto</span></label><input id="ticketDate" readonly></div>
           <div class="field full">
             <label class="req" for="itemId">Item ID</label>
             <div style="display:flex;gap:8px">
               <input id="itemId" placeholder="Enter Item ID and fetch" style="flex:1" required>
               <button type="button" class="btn gold" style="width:auto;padding:0 18px" id="fetchBtn">Fetch</button>
             </div>
-            <div class="help">Auto-fetches Article No, Color, Contrast, Size, Sold / Return / Purchase dates, Cashmemo, Supplier (latest record).</div>
+            <div class="help">Auto-fetches Article No, Color, Contrast, Size, Sold / Return / Purchase dates, Cashmemo, Supplier.</div>
           </div>
-
           <div class="full" id="articlePreview" style="display:none">
             <div class="article-preview">
               <img id="apImg" alt="article">
@@ -266,35 +206,23 @@
               </div>
             </div>
           </div>
-
           <div class="field readonly"><label>Article No <span class="ro-badge">auto</span></label><input id="articleNo" readonly></div>
           <div class="field readonly"><label>Color Name <span class="ro-badge">auto</span></label><input id="colorName" readonly></div>
           <div class="field readonly"><label>Contrast <span class="ro-badge">auto</span></label><input id="contrast" readonly></div>
           <div class="field readonly"><label>Size <span class="ro-badge">auto</span></label><input id="size" readonly></div>
-          <div class="field readonly"><label>Sold Date <span class="ro-badge">auto · latest</span></label><input id="soldDate" readonly></div>
-          <div class="field readonly"><label>Sold Return Date <span class="ro-badge">auto · latest</span></label><input id="soldReturnDate" readonly></div>
-          <div class="field readonly"><label>Purchased Date <span class="ro-badge">auto · latest</span></label><input id="purchasedDate" readonly></div>
-          <div class="field readonly"><label>Cashmemo No <span class="ro-badge">auto · latest</span></label><input id="cashmemoNo" readonly></div>
-          <div class="field readonly full"><label>Supplier Name <span class="ro-badge">auto · latest</span></label><input id="supplierName" readonly></div>
-
-          <div class="field full">
-            <label class="req">Complaint Reason <span class="man-badge">manual</span></label>
-            <textarea id="complaintReason" rows="2" placeholder="Describe the complaint reason" required></textarea>
-          </div>
-
+          <div class="field readonly"><label>Sold Date <span class="ro-badge">auto</span></label><input id="soldDate" readonly></div>
+          <div class="field readonly"><label>Sold Return Date <span class="ro-badge">auto</span></label><input id="soldReturnDate" readonly></div>
+          <div class="field readonly"><label>Purchased Date <span class="ro-badge">auto</span></label><input id="purchasedDate" readonly></div>
+          <div class="field readonly"><label>Cashmemo No <span class="ro-badge">auto</span></label><input id="cashmemoNo" readonly></div>
+          <div class="field readonly full"><label>Supplier Name <span class="ro-badge">auto</span></label><input id="supplierName" readonly></div>
+          <div class="field full"><label class="req">Complaint Reason <span class="man-badge">manual</span></label><textarea id="complaintReason" rows="2" placeholder="Describe the complaint reason" required></textarea></div>
           <div class="field full">
             <label>Complaint Images <span class="man-badge">camera / gallery · max 4</span></label>
             <div class="img-grid" id="imgGrid"></div>
-            <!-- camera-first input -->
             <input type="file" id="imgInput" accept="image/*" capture="environment" multiple style="display:none">
             <div class="help">Tap a slot to capture from mobile camera or choose from gallery.</div>
           </div>
-
-          <div class="field full">
-            <p class="help" style="margin:0">Approval Manager, Remarks, Challan No and Debit/Purchase Return No are completed by the Manager in the <b>All Complaints History</b> section.</p>
-          </div>
         </div>
-
         <div class="row-actions">
           <button type="button" class="btn secondary" id="resetBtn">Clear</button>
           <button type="button" class="btn ghost" id="printNewBtn">Print</button>
@@ -304,17 +232,36 @@
     </div>
   </div>
 
-  <!-- ---------- SECTION 2 ---------- -->
+  <!-- SECTION 2 -->
   <div class="page hidden" id="tab2">
     <div class="card" style="padding:14px 16px">
       <span class="section-tag">SECTION 2 · COMPLAINTS HISTORY</span>
-      <h2>All Complaints &amp; Follow-up</h2>
-      <p class="desc">Managers review complaints here — set approval &amp; status, add colour/reason/remarks, challan and debit/PR no, then print.</p>
+      <h2 id="histTitle">All Complaints</h2>
+      <p class="desc" id="histDesc">Review complaints, add manager details and print.</p>
     </div>
-    <div class="search-bar">
-      <input id="searchInput" placeholder="Search by Ticket ID, Item ID or Article No…" oninput="renderHistory()">
-    </div>
+    <div class="search-bar"><input id="searchInput" placeholder="Search by Ticket ID, Item ID, Article or Store…" oninput="renderHistory()"></div>
     <div id="historyList"></div>
+  </div>
+
+  <!-- SECTION 3 · ADMIN -->
+  <div class="page hidden" id="tab3">
+    <div class="card">
+      <span class="section-tag">ADMIN · USER MANAGEMENT</span>
+      <h2>Create / Manage Users</h2>
+      <p class="desc">Add a login, reset a password, or enable/disable an account.</p>
+      <div class="grid">
+        <div class="field"><label>Store / User Code</label><input id="auCode" placeholder="e.g. 1055"></div>
+        <div class="field"><label>Role</label><select id="auRole"><option value="store">store</option><option value="manager">manager</option><option value="admin">admin</option></select></div>
+        <div class="field"><label>Password</label><input id="auPass" placeholder="blank = MBZ+code"></div>
+        <div class="field"><label>Store Name (optional)</label><input id="auName" placeholder="Store name"></div>
+      </div>
+      <div class="row-actions"><button class="btn" id="auSave">Create / Update User</button></div>
+    </div>
+    <div class="card">
+      <h2>Existing Users</h2>
+      <div style="overflow:auto"><table class="utable" id="userTable"><tbody></tbody></table></div>
+      <div class="help">Only accounts created/edited by Admin appear here. Store codes not listed still log in with the default MBZ+code password.</div>
+    </div>
   </div>
 </div>
 
@@ -323,13 +270,8 @@
   <div class="modal">
     <h3>Manager Review</h3>
     <input type="hidden" id="fuTicket">
-    <div class="field"><label>Approval Manager</label>
-      <select id="fuApprover">
-        <option value="">— Select manager —</option>
-        <option>Chetna</option><option>Sunder</option><option>Prapti</option>
-      </select></div>
-    <div class="field"><label>Status</label>
-      <select id="fuStatus"><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
+    <div class="field"><label>Approval Manager</label><select id="fuApprover"><option value="">— Select manager —</option><option>Chetna</option><option>Sunder</option><option>Prapti</option></select></div>
+    <div class="field"><label>Status</label><select id="fuStatus"><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
     <div class="field"><label>Colour Name</label><input id="fuColor" placeholder="Colour name"></div>
     <div class="field"><label>Reason</label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
     <div class="field"><label>Remarks</label><textarea id="fuRemarks" rows="2" placeholder="Remarks"></textarea></div>
@@ -342,330 +284,215 @@
   </div>
 </div>
 
+<!-- password reset modal (admin) -->
+<div id="pwModal" class="modal-back hidden">
+  <div class="modal">
+    <h3>Reset Password</h3>
+    <input type="hidden" id="pwCode">
+    <div class="field"><label>New password for <b id="pwWho"></b></label><input id="pwNew" placeholder="New password"></div>
+    <div class="row-actions">
+      <button class="btn secondary" onclick="document.getElementById('pwModal').classList.add('hidden')">Cancel</button>
+      <button class="btn" onclick="doResetPassword()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-/* =====================================================================
-   API LAYER — calls the Vercel serverless functions in /api, which read
-   and write the Google Sheet and upload photos to Google Drive.
-   USE_MOCK=true lets you preview the UI offline with sample data.
-   ===================================================================== */
-const USE_MOCK = false;
-const API_BASE = "";   // same origin on Vercel
+const API_BASE = "";
+const MANAGER_CODES = ["9999","9998","9997","9996"];
 
 const API = {
-  // 1) Validate store + return store name. Password rule MBZ+code is checked client-side too.
-  async login(storecode, password){
-    if(USE_MOCK){
-      await wait(300);
-      return { ok:true, storecode, storename: MOCK_STORES[storecode] || ("Meena Bazaar — Store "+storecode) };
-    }
-    const r = await fetch(`${API_BASE}/api/login`,{method:"POST",headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({storecode,password})});
-    return r.json(); // expected { ok, storecode, storename }
+  async login(storecode,password){
+    const r=await fetch(`${API_BASE}/api/login`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({storecode,password})});
+    const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}}
   },
-
-  // 2) Look up item by ItemID — return LATEST transaction record.
-  async getItem(itemId){
-    if(USE_MOCK){
-      await wait(450);
-      return MOCK_ITEMS[itemId] || null;
-    }
-    const r = await fetch(`${API_BASE}/api/item?itemId=${encodeURIComponent(itemId)}`);
-    if(!r.ok) return null;
-    return r.json();
-    /* expected shape:
-       { articleNo, imageUrl, colorName, contrast, size,
-         soldDate, soldReturnDate, purchasedDate, cashmemoNo, supplierName }  */
-  },
-
-  // 3) Submit a new complaint (Section 1).
-  async submitComplaint(payload){
-    if(USE_MOCK){ await wait(250); return { ok:true }; }
-    const r = await fetch(`${API_BASE}/api/complaints`,{method:"POST",headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)});
-    const t = await r.text();
-    try{ return JSON.parse(t); }catch(_){ return { ok:false, error:`HTTP ${r.status} — ${t.slice(0,80)}` }; }
-  },
-
-  // 4) List complaints for the logged-in store (Section 2).
-  async listComplaints(storecode){
-    if(USE_MOCK){ await wait(150); return STORE.complaints; }
-    const r = await fetch(`${API_BASE}/api/complaints?storecode=${storecode}`);
-    return r.json();
-  },
-
-  // 5) Save manager review against a complaint (Section 2).
-  async saveFollowup(payload){
-    if(USE_MOCK){ await wait(150); return { ok:true }; }
-    const r = await fetch(`${API_BASE}/api/followup`,
-      {method:"POST",headers:{'Content-Type':'application/json'},
-       body:JSON.stringify(payload)});
-    return r.json();
-  },
-
-  // 6) Next serial number for TicketID generation.
-  async nextSerial(storecode){
-    if(USE_MOCK){ return String((STORE.complaints.length+1)).padStart(4,'0'); }
-    const r = await fetch(`${API_BASE}/api/serial?storecode=${encodeURIComponent(storecode)}`);
-    return (await r.json()).serial;
-  }
+  async getItem(itemId){ const r=await fetch(`${API_BASE}/api/item?itemId=${encodeURIComponent(itemId)}`); if(!r.ok)return null; return r.json(); },
+  async submitComplaint(p){ const r=await fetch(`${API_BASE}/api/complaints`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status} — ${t.slice(0,80)}`}} },
+  async listComplaints(storecode,all){ const r=await fetch(`${API_BASE}/api/complaints?storecode=${encodeURIComponent(storecode)}${all?'&scope=all':''}`); return r.json(); },
+  async saveFollowup(p){ const r=await fetch(`${API_BASE}/api/followup`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
+  async nextSerial(storecode){ const r=await fetch(`${API_BASE}/api/serial?storecode=${encodeURIComponent(storecode)}`); return (await r.json()).serial; },
+  async admin(action,extra){ const body=Object.assign({action,adminCode:SESSION.storecode,adminPassword:SESSION.password},extra||{}); const r=await fetch(`${API_BASE}/api/admin`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} }
 };
 
-/* ---------- MOCK DATA (demo only) ---------- */
-const MOCK_STORES = { "1024":"Meena Bazaar — Lajpat Nagar", "2048":"Meena Bazaar — Karol Bagh" };
-const MOCK_ITEMS = {
-  "IT5001":{articleNo:"ART-7782",imageUrl:"https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=200&q=60",
-    colorName:"Royal Maroon",contrast:"Gold Zari",size:"M",soldDate:"2026-05-18",soldReturnDate:"2026-05-29",
-    purchasedDate:"2026-02-11",cashmemoNo:"CM-99841",supplierName:"Riya Fashions Pvt Ltd"},
-  "IT5002":{articleNo:"ART-6610",imageUrl:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&q=60",
-    colorName:"Emerald Green",contrast:"Silver",size:"L",soldDate:"2026-06-01",soldReturnDate:"",
-    purchasedDate:"2026-03-22",cashmemoNo:"CM-10233",supplierName:"Anand Textiles"}
-};
+let SESSION={storecode:null,storename:null,role:'store',password:null};
+let STORE={complaints:[]};
+let currentImages=[];
 
-/* ---------- SESSION STATE ---------- */
-let STORE = { storecode:null, storename:null, complaints:[] };
-let currentImages = [];   // base64 data URLs (max 4)
-
-/* ---------- HELPERS ---------- */
-const $ = id => document.getElementById(id);
-const wait = ms => new Promise(r=>setTimeout(r,ms));
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2600);}
-function fmtNow(){const d=new Date();return d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+const $=id=>document.getElementById(id);
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
+function fmtNow(){return new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+/* convert a Google Drive link to an inline-renderable thumbnail URL */
+function driveThumb(u){ if(!u)return''; const m=String(u).match(/[-\w]{25,}/); return m?`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`:u; }
 
-/* ===================== LOGIN ===================== */
-$("loginForm").addEventListener("submit", async e=>{
+/* LOGIN */
+$("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const code = $("storecode").value.trim();
-  const pwd  = $("password").value;
+  const code=$("storecode").value.trim(), pwd=$("password").value;
   $("loginErr").textContent="";
-  if(!code){ $("loginErr").textContent="Enter store code."; return; }
-  // password rule: MBZ + storecode
-  if(pwd !== "MBZ"+code){ $("loginErr").textContent="Invalid password. Use MBZ followed by your store code."; return; }
-  const btn = e.target.querySelector("button"); btn.textContent="Signing in…"; btn.disabled=true;
-  const res = await API.login(code,pwd);
-  btn.textContent="Sign In"; btn.disabled=false;
-  if(!res || !res.ok){ $("loginErr").textContent=(res && res.error) ? res.error : "Login failed. Check store code."; return; }
-  STORE.storecode = res.storecode; STORE.storename = res.storename; STORE.complaints = [];
-  $("tbStoreName").textContent = STORE.storename;
-  $("tbStoreCode").textContent = STORE.storecode;
-  $("loginScreen").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  await newTicket();
-  showTab(1);
+  if(!code){$("loginErr").textContent="Enter store code.";return;}
+  const btn=e.target.querySelector("button[type=submit]");btn.textContent="Signing in…";btn.disabled=true;
+  const res=await API.login(code,pwd);
+  btn.textContent="Sign In";btn.disabled=false;
+  if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed.";return;}
+  SESSION={storecode:res.storecode,storename:res.storename,role:res.role||'store',password:pwd};
+  $("tbStoreName").textContent=SESSION.storename;
+  $("tbStoreCode").textContent=SESSION.storecode;
+  $("tbRole").textContent=SESSION.role;
+  $("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");
+  configureForRole();
 });
-
-$("logoutBtn").addEventListener("click", ()=>{
-  if(!confirm("Logout?")) return;
-  STORE={storecode:null,storename:null,complaints:[]}; currentImages=[];
-  $("app").classList.add("hidden"); $("loginScreen").classList.remove("hidden");
-  $("loginForm").reset();
+$("forgotBtn").addEventListener("click",()=>{
+  toast("Default password is MBZ + your store code (e.g. MBZ1024). If it was changed, contact Admin (store 2626) to reset it.");
 });
+$("pwdEye").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("pwdEye").style.opacity=p.type==="text"?"1":".6";});
+$("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SESSION={storecode:null,role:'store',password:null}; currentImages=[]; $("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginForm").reset(); });
 
-/* ===================== TABS ===================== */
+function configureForRole(){
+  const isStore=SESSION.role==='store', isAdmin=SESSION.role==='admin';
+  $("tabBtn1").classList.toggle("hidden",!isStore);      // only store raises complaints
+  $("tabBtn3").classList.toggle("hidden",!isAdmin);      // admin tab
+  $("histTitle").textContent = isStore ? "My Complaints" : "All Complaints (all stores)";
+  $("histDesc").textContent  = isStore ? "Your submitted complaints. Add follow-up details and print."
+                                       : (isAdmin ? "All complaints across stores. Review, print or delete." : "All complaints across stores. Review and print.");
+  if(isStore){ newTicket(); showTab(1); } else { showTab(2); }
+  if(isAdmin) loadUsers();
+}
+
 function showTab(n){
   $("tab1").classList.toggle("hidden",n!==1);
   $("tab2").classList.toggle("hidden",n!==2);
+  $("tab3").classList.toggle("hidden",n!==3);
   $("tabBtn1").classList.toggle("active",n===1);
   $("tabBtn2").classList.toggle("active",n===2);
+  $("tabBtn3").classList.toggle("active",n===3);
   if(n===2) renderHistory();
+  if(n===3) loadUsers();
 }
 
-/* ===================== SECTION 1 ===================== */
-async function newTicket(){
-  const serial = await API.nextSerial(STORE.storecode);
-  $("ticketId").value = STORE.storecode + "-" + serial;
-  $("ticketDate").value = fmtNow();
-}
-
-$("fetchBtn").addEventListener("click", fetchItem);
+/* SECTION 1 */
+async function newTicket(){ $("ticketId").value=SESSION.storecode+"-"+(await API.nextSerial(SESSION.storecode)); $("ticketDate").value=fmtNow(); }
+$("fetchBtn").addEventListener("click",fetchItem);
 $("itemId").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();fetchItem();}});
-
 async function fetchItem(){
-  const id = $("itemId").value.trim();
-  if(!id){ toast("Enter an Item ID first."); return; }
-  const btn=$("fetchBtn"); btn.textContent="…"; btn.disabled=true;
-  const d = await API.getItem(id);
-  btn.textContent="Fetch"; btn.disabled=false;
-  if(!d){ toast("No record found for "+id); clearItemFields(); return; }
-  $("articleNo").value=d.articleNo||""; $("colorName").value=d.colorName||"";
-  $("contrast").value=d.contrast||""; $("size").value=d.size||"";
-  $("soldDate").value=d.soldDate||""; $("soldReturnDate").value=d.soldReturnDate||"";
-  $("purchasedDate").value=d.purchasedDate||""; $("cashmemoNo").value=d.cashmemoNo||"";
-  $("supplierName").value=d.supplierName||"";
-  // preview
-  $("apArticle").textContent=d.articleNo||"—"; $("apColor").textContent=d.colorName||"—";
-  $("apContrast").textContent=d.contrast||"—"; $("apSize").textContent=d.size||"—";
-  $("apImg").src=d.imageUrl||"";
-  $("articlePreview").style.display = d.imageUrl ? "block":"none";
-  $("articlePreview")._url = d.imageUrl||"";
+  const id=$("itemId").value.trim(); if(!id){toast("Enter an Item ID first.");return;}
+  const b=$("fetchBtn");b.textContent="…";b.disabled=true;
+  const d=await API.getItem(id); b.textContent="Fetch";b.disabled=false;
+  if(!d){toast("No record found for "+id);clearItemFields();return;}
+  $("articleNo").value=d.articleNo||"";$("colorName").value=d.colorName||"";$("contrast").value=d.contrast||"";$("size").value=d.size||"";
+  $("soldDate").value=d.soldDate||"";$("soldReturnDate").value=d.soldReturnDate||"";$("purchasedDate").value=d.purchasedDate||"";
+  $("cashmemoNo").value=d.cashmemoNo||"";$("supplierName").value=d.supplierName||"";
+  $("apArticle").textContent=d.articleNo||"—";$("apColor").textContent=d.colorName||"—";$("apContrast").textContent=d.contrast||"—";$("apSize").textContent=d.size||"—";
+  $("apImg").src=driveThumb(d.imageUrl)||"";$("articlePreview").style.display=d.imageUrl?"block":"none";$("articlePreview")._url=d.imageUrl||"";
   toast("Details fetched.");
 }
-function clearItemFields(){
-  ["articleNo","colorName","contrast","size","soldDate","soldReturnDate","purchasedDate","cashmemoNo","supplierName"].forEach(i=>$(i).value="");
-  $("articlePreview").style.display="none";
-}
+function clearItemFields(){["articleNo","colorName","contrast","size","soldDate","soldReturnDate","purchasedDate","cashmemoNo","supplierName"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
 
-/* ----- image capture (max 4) ----- */
+function compressImage(file,maxDim=1280,q=0.7){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>h){if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}}else{if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);resolve(cv.toDataURL('image/jpeg',q));};img.onerror=reject;img.src=fr.result;};fr.onerror=reject;fr.readAsDataURL(file);});}
 function renderImgGrid(){
-  const g=$("imgGrid"); g.innerHTML="";
-  currentImages.forEach((src,i)=>{
-    const s=document.createElement("div"); s.className="img-slot";
-    s.innerHTML=`<img src="${src}"><button type="button" class="rm" onclick="removeImg(${i})">&times;</button>`;
-    g.appendChild(s);
-  });
-  if(currentImages.length<4){
-    const s=document.createElement("div"); s.className="img-slot";
-    s.innerHTML=`<button type="button" class="add-photo" onclick="document.getElementById('imgInput').click()">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
-      Add Photo<br>(${currentImages.length}/4)</button>`;
-    g.appendChild(s);
-  }
+  const g=$("imgGrid");g.innerHTML="";
+  currentImages.forEach((src,i)=>{const s=document.createElement("div");s.className="img-slot";s.innerHTML=`<img src="${src}"><button type="button" class="rm" onclick="removeImg(${i})">&times;</button>`;g.appendChild(s);});
+  if(currentImages.length<4){const s=document.createElement("div");s.className="img-slot";s.innerHTML=`<button type="button" class="add-photo" onclick="document.getElementById('imgInput').click()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>Add Photo<br>(${currentImages.length}/4)</button>`;g.appendChild(s);}
 }
-function removeImg(i){ currentImages.splice(i,1); renderImgGrid(); }
-function compressImage(file, maxDim=1280, quality=0.7){
-  return new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        let w=img.width, h=img.height;
-        if(w>h){ if(w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } }
-        else   { if(h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; } }
-        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(cv.toDataURL('image/jpeg', quality));
-      };
-      img.onerror=reject; img.src=fr.result;
-    };
-    fr.onerror=reject; fr.readAsDataURL(file);
-  });
-}
-$("imgInput").addEventListener("change", async e=>{
-  const files=[...e.target.files];
-  for(const f of files){
-    if(currentImages.length>=4){ toast("Max 4 images."); break; }
-    try{ currentImages.push(await compressImage(f)); renderImgGrid(); }
-    catch(_){ toast("Could not read that image."); }
-  }
-  e.target.value="";
-});
+function removeImg(i){currentImages.splice(i,1);renderImgGrid();}
+$("imgInput").addEventListener("change",async e=>{const files=[...e.target.files];for(const f of files){if(currentImages.length>=4){toast("Max 4 images.");break;}try{currentImages.push(await compressImage(f));renderImgGrid();}catch(_){toast("Could not read that image.");}}e.target.value="";});
 
-/* ----- submit ----- */
-$("complaintForm").addEventListener("submit", async e=>{
+$("complaintForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  if(!$("articleNo").value){ toast("Fetch item details before submitting."); return; }
-  const payload = collectForm();
-  const res = await API.submitComplaint(payload);
-  if(res && res.ok){
-    toast("Complaint "+payload.ticketId+" submitted.");
-    resetForm(); await newTicket();
-  } else { toast("Submit failed: "+((res&&res.error)||"check /api/health")); }
+  if(!$("articleNo").value){toast("Fetch item details before submitting.");return;}
+  const payload=collectForm();
+  const res=await API.submitComplaint(payload);
+  if(res&&res.ok){toast("Complaint "+(res.ticketId||payload.ticketId)+" submitted.");resetForm();await newTicket();}
+  else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
+function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
+function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
+$("resetBtn").addEventListener("click",resetForm);
+$("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printComplaint(collectForm());});
 
-function collectForm(){
-  return {
-    ticketId:$("ticketId").value, ticketDate:$("ticketDate").value,
-    storecode:STORE.storecode, storename:STORE.storename,
-    itemId:$("itemId").value.trim(), articleNo:$("articleNo").value,
-    imageUrl:$("articlePreview")._url||"", colorName:$("colorName").value,
-    contrast:$("contrast").value, size:$("size").value,
-    soldDate:$("soldDate").value, soldReturnDate:$("soldReturnDate").value,
-    purchasedDate:$("purchasedDate").value, cashmemoNo:$("cashmemoNo").value,
-    supplierName:$("supplierName").value, complaintReason:$("complaintReason").value,
-    images:[...currentImages], approver:"", remarks:"",
-    challanNo:"", debitNo:"",
-    status:"Pending", followup:null
-  };
-}
-function resetForm(){ $("complaintForm").reset(); clearItemFields(); currentImages=[]; renderImgGrid(); }
-$("resetBtn").addEventListener("click", resetForm);
-$("printNewBtn").addEventListener("click", ()=>{
-  if(!$("articleNo").value){ toast("Fetch item details first."); return; }
-  printComplaint(collectForm());
-});
-
-/* ===================== SECTION 2 ===================== */
+/* SECTION 2 */
 async function renderHistory(){
   const list=$("historyList");
-  STORE.complaints = await API.listComplaints(STORE.storecode);
+  const all=SESSION.role!=='store';
+  STORE.complaints=await API.listComplaints(SESSION.storecode,all);
   const q=($("searchInput").value||"").toLowerCase();
-  const data=STORE.complaints.filter(c=>!q||[c.ticketId,c.itemId,c.articleNo].join(" ").toLowerCase().includes(q));
-  if(!data.length){ list.innerHTML=`<div class="empty">No complaints yet.<br>Submitted complaints appear here for follow-up.</div>`; return; }
+  const data=(STORE.complaints||[]).filter(c=>!q||[c.ticketId,c.itemId,c.articleNo,c.storecode,c.storename].join(" ").toLowerCase().includes(q));
+  if(!data.length){list.innerHTML=`<div class="empty">No complaints found.</div>`;return;}
+  const isAdmin=SESSION.role==='admin', canReview=SESSION.role!=='store';
   list.innerHTML=data.map(c=>{
-    const img=c.images&&c.images[0]?c.images[0]:(c.imageUrl||"");
+    const img=driveThumb((c.images&&c.images[0])||c.imageUrl||"");
     const raw=(c.status||"Pending").toLowerCase();
-    const st = raw==="approved"?"approved":(raw==="rejected"?"rejected":"pending");
-    const stLabel = st.charAt(0).toUpperCase()+st.slice(1);
-    const reviewed = c.approver || c.challanNo || c.debitNo || (c.followup && (c.followup.color||c.followup.reason||c.followup.remarks));
-    const fu=reviewed?`<div class="followup-box">
-        <b>Manager Review</b><br>
-        Approver: ${esc(c.approver||'—')} &nbsp;·&nbsp; Colour: ${esc(c.followup?.color||'—')} &nbsp;·&nbsp; Reason: ${esc(c.followup?.reason||'—')}<br>
-        Remarks: ${esc(c.followup?.remarks||'—')}<br>
-        Challan: ${esc(c.challanNo||'—')} &nbsp;·&nbsp; Debit/PR: ${esc(c.debitNo||'—')}
-      </div>`:"";
+    const st=raw==="approved"?"approved":(raw==="rejected"?"rejected":"pending");
+    const reviewed=c.approver||c.challanNo||c.debitNo||(c.followup&&(c.followup.color||c.followup.reason||c.followup.remarks));
+    const fu=reviewed?`<div class="followup-box"><b>Manager Review</b><br>Approver: ${esc(c.approver||'—')} · Colour: ${esc(c.followup?.color||'—')} · Reason: ${esc(c.followup?.reason||'—')}<br>Remarks: ${esc(c.followup?.remarks||'—')}<br>Challan: ${esc(c.challanNo||'—')} · Debit/PR: ${esc(c.debitNo||'—')}</div>`:"";
     return `<div class="complaint">
-      <div class="head">
-        <div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div></div>
-        <span class="pill ${st}">${stLabel}</span>
-      </div>
-      <div class="body">
-        ${img?`<img src="${img}">`:""}
-        <div class="kv">
-          <b>Item</b><span>${esc(c.itemId)}</span>
-          <b>Article</b><span>${esc(c.articleNo)}</span>
-          <b>Color</b><span>${esc(c.colorName)}</span>
-          <b>Reason</b><span>${esc(c.complaintReason)}</span>
-        </div>
-      </div>
+      <div class="head"><div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div>${all?`<div class="store-tag">${esc(c.storecode)} · ${esc(c.storename)}</div>`:""}</div><span class="pill ${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span></div>
+      <div class="body">${img?`<img src="${img}" referrerpolicy="no-referrer">`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
       ${fu}
       <div class="foot">
-        <button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>
+        ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
         <button class="btn secondary" onclick='printById(${JSON.stringify(c.ticketId)})'>Print</button>
+        ${isAdmin?`<button class="btn danger" onclick='deleteComplaint(${JSON.stringify(c.ticketId)})'>Delete</button>`:""}
       </div>
     </div>`;
   }).join("");
 }
-function openFollowup(tid){
-  const c=STORE.complaints.find(x=>x.ticketId===tid); if(!c)return;
-  $("fuTicket").value=tid;
-  $("fuApprover").value=c.approver||"";
-  $("fuStatus").value=c.status||"Pending";
-  $("fuColor").value=c.followup?.color||""; $("fuReason").value=c.followup?.reason||""; $("fuRemarks").value=c.followup?.remarks||"";
-  $("fuChallan").value=c.challanNo||""; $("fuDebit").value=c.debitNo||"";
-  $("followupModal").classList.remove("hidden");
-}
-function closeFollowup(){ $("followupModal").classList.add("hidden"); }
+function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
+function closeFollowup(){$("followupModal").classList.add("hidden");}
 async function saveFollowup(){
   const tid=$("fuTicket").value;
-  const payload={ ticketId:tid, approver:$("fuApprover").value, status:$("fuStatus").value,
-    color:$("fuColor").value, reason:$("fuReason").value, remarks:$("fuRemarks").value,
-    challanNo:$("fuChallan").value, debitNo:$("fuDebit").value };
+  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
   const res=await API.saveFollowup(payload);
-  if(res&&res.ok){
-    const c=STORE.complaints.find(x=>x.ticketId===tid);
-    if(c){ c.approver=payload.approver; c.status=payload.status; c.challanNo=payload.challanNo; c.debitNo=payload.debitNo;
-      c.followup={color:payload.color,reason:payload.reason,remarks:payload.remarks}; }
-    closeFollowup(); renderHistory(); toast("Review saved.");
-  } else toast("Save failed: "+((res&&res.error)||""));
+  if(res&&res.ok){closeFollowup();renderHistory();toast("Review saved.");}else toast("Save failed: "+((res&&res.error)||""));
 }
-function printById(tid){ const c=STORE.complaints.find(x=>x.ticketId===tid); if(c)printComplaint(c); }
+function printById(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(c)printComplaint(c);}
+async function deleteComplaint(tid){
+  if(!confirm("Delete complaint "+tid+"? This cannot be undone."))return;
+  const res=await API.admin('deleteComplaint',{ticketId:tid});
+  if(res&&res.ok){toast("Deleted "+tid);renderHistory();}else toast("Delete failed: "+((res&&res.error)||""));
+}
 
-/* ===================== PRINT ===================== */
+/* SECTION 3 · ADMIN */
+async function loadUsers(){
+  const res=await API.admin('listUsers');
+  const tb=$("userTable").querySelector("tbody");
+  if(!res||!res.ok){tb.innerHTML=`<tr><td>Could not load users: ${esc((res&&res.error)||'')}</td></tr>`;return;}
+  const rows=res.users||[];
+  tb.innerHTML=`<tr><th>Code</th><th>Role</th><th>Enabled</th><th>Actions</th></tr>`+ (rows.length?rows.map(u=>{
+    const en=String(u.enabled)!=='0';
+    return `<tr><td><b>${esc(u.storecode)}</b><br><span class="help">${esc(u.storename||'')}</span></td><td>${esc(u.role)}</td><td>${en?'Yes':'No'}</td>
+      <td>
+        <button class="mini" onclick='resetPassword(${JSON.stringify(u.storecode)})'>Reset PW</button>
+        <button class="mini ${en?'off':''}" onclick='toggleUser(${JSON.stringify(u.storecode)},${!en})'>${en?'Disable':'Enable'}</button>
+      </td></tr>`;
+  }).join(''):`<tr><td colspan="4" class="help">No admin-managed users yet.</td></tr>`);
+}
+$("auSave").addEventListener("click",async ()=>{
+  const code=$("auCode").value.trim(); if(!code){toast("Enter a code.");return;}
+  const res=await API.admin('saveUser',{storecode:code,role:$("auRole").value,password:$("auPass").value.trim(),storename:$("auName").value.trim(),enabled:true});
+  if(res&&res.ok){toast("User "+code+" saved.");$("auCode").value="";$("auPass").value="";$("auName").value="";loadUsers();}else toast("Save failed: "+((res&&res.error)||""));
+});
+function toggleUser(code,enable){API.admin('setEnabled',{storecode:code,enabled:enable}).then(r=>{if(r&&r.ok){toast((enable?'Enabled ':'Disabled ')+code);loadUsers();}else toast("Failed: "+((r&&r.error)||""));});}
+function resetPassword(code){$("pwCode").value=code;$("pwWho").textContent=code;$("pwNew").value="";$("pwModal").classList.remove("hidden");}
+async function doResetPassword(){
+  const code=$("pwCode").value,pw=$("pwNew").value.trim(); if(!pw){toast("Enter a password.");return;}
+  const res=await API.admin('setPassword',{storecode:code,password:pw});
+  if(res&&res.ok){$("pwModal").classList.add("hidden");toast("Password updated for "+code);}else toast("Failed: "+((res&&res.error)||""));
+}
+
+/* PRINT */
 function printComplaint(c){
-  const imgs=(c.images||[]).map(s=>`<img src="${s}" style="width:120px;height:120px;object-fit:cover;border:1px solid #ccc;border-radius:6px;margin:4px">`).join("");
-  const fu=c.followup?`<h3 style="color:#557e96">Follow-up</h3>
-    <table>${row("Color",c.followup.color)}${row("Reason",c.followup.reason)}${row("Remarks",c.followup.remarks)}</table>`:"";
+  const imgs=(c.images||[]).map(s=>`<img src="${driveThumb(s)}" referrerpolicy="no-referrer" style="width:120px;height:120px;object-fit:cover;border:1px solid #ccc;border-radius:6px;margin:4px">`).join("");
   const w=window.open("","_print");
   w.document.write(`<html><head><title>${esc(c.ticketId)}</title><style>
     body{font-family:Arial;color:#222;padding:26px;font-size:13px}
-    h1{color:#557e96;margin:0 0 2px;font-size:20px}
-    .sub{color:#666;margin:0 0 14px;font-size:12px}
+    h1{color:#557e96;margin:0 0 2px;font-size:20px}.sub{color:#666;margin:0 0 14px;font-size:12px}
     table{width:100%;border-collapse:collapse;margin-bottom:14px}
     td{padding:6px 8px;border:1px solid #ddd;vertical-align:top}
     td.k{background:#eef4fa;font-weight:bold;width:170px;color:#557e96}
-    h3{margin:12px 0 6px}
+    h3{margin:12px 0 6px;color:#557e96}
   </style></head><body>
     <h1>Meena Bazaar — Complaint</h1>
     <p class="sub">${esc(c.storename)} (Store ${esc(c.storecode)})</p>
@@ -673,25 +500,21 @@ function printComplaint(c){
       ${row("Ticket ID",c.ticketId)}${row("Date",c.ticketDate)}${row("Item ID",c.itemId)}
       ${row("Article No",c.articleNo)}${row("Color",c.colorName)}${row("Contrast",c.contrast)}${row("Size",c.size)}
       ${row("Sold Date",c.soldDate)}${row("Sold Return Date",c.soldReturnDate)}${row("Purchased Date",c.purchasedDate)}
-      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}
-      ${row("Complaint Reason",c.complaintReason)}${row("Approver",c.approver)}${row("Status",c.status)}
-      ${row("Challan No",c.challanNo)}${row("Debit / PR No",c.debitNo)}
+      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Complaint Reason",c.complaintReason)}
     </table>
-    ${imgs?`<h3 style="color:#557e96">Images</h3>${imgs}`:""}
-    ${fu}
+    <h3>Follow-up / Manager Review</h3>
+    <table>
+      ${row("Approver",c.approver)}${row("Status",c.status)}
+      ${row("Challan No",c.challanNo)}${row("Debit / PR No",c.debitNo)}
+      ${row("Colour",c.followup?c.followup.color:'')}${row("Reason",c.followup?c.followup.reason:'')}${row("Remarks",c.followup?c.followup.remarks:'')}
+    </table>
+    ${imgs?`<h3>Images</h3>${imgs}`:""}
     <script>window.onload=()=>{window.print()}<\/script>
   </body></html>`);
   w.document.close();
 }
 function row(k,v){return `<tr><td class="k">${esc(k)}</td><td>${esc(v||'—')}</td></tr>`;}
 
-/* password show/hide toggle */
-$("pwdEye").addEventListener("click", ()=>{
-  const p=$("password"); p.type = p.type==="password" ? "text":"password";
-  $("pwdEye").style.opacity = p.type==="text" ? "1":".6";
-});
-
-/* init */
 renderImgGrid();
 </script>
 </body>

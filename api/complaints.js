@@ -88,10 +88,11 @@ async function create(req, res) {
 
 async function list(req, res) {
   const code = String((req.query && req.query.storecode) || '').trim();
+  const all = req.query && (req.query.scope === 'all');   // admin / manager see everything
   try {
     await ensureHeader();
     const { rows } = await getRows(TABS.complaints);
-    const data = rows.filter(r => String(field(r, 'StoreCode')).trim() === code).reverse().map(r => {
+    const data = rows.filter(r => all || String(field(r, 'StoreCode')).trim() === code).reverse().map(r => {
       const images = ['Image1', 'Image2', 'Image3', 'Image4'].map(k => field(r, k)).filter(Boolean);
       const fc = field(r, 'FollowupColor'), fr = field(r, 'FollowupReason'), fm = field(r, 'FollowupRemarks');
       return {
