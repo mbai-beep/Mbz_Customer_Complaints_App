@@ -352,12 +352,13 @@ $("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SES
 
 function configureForRole(){
   const isStore=SESSION.role==='store', isAdmin=SESSION.role==='admin';
-  $("tabBtn1").classList.toggle("hidden",!isStore);      // only store raises complaints
+  $("tabBtn1").classList.remove("hidden");               // New Complaint available to all roles
   $("tabBtn3").classList.toggle("hidden",!isAdmin);      // admin tab
   $("histTitle").textContent = isStore ? "My Complaints" : "All Complaints (all stores)";
   $("histDesc").textContent  = isStore ? "Your submitted complaints. Add follow-up details and print."
                                        : (isAdmin ? "All complaints across stores. Review, print or delete." : "All complaints across stores. Review and print.");
-  if(isStore){ newTicket(); showTab(1); } else { showTab(2); }
+  newTicket();
+  showTab(1);
   if(isAdmin) loadUsers();
 }
 
