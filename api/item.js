@@ -54,7 +54,9 @@ module.exports = async (req, res) => {
       soldReturnDate: d(pick(r, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*(dt|date)/i)), // PRT view ONLY
       purchasedDate:  d(pick(M, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'])),
       cashmemoNo:     pick(M, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo']),
-      supplierName:   pick(M, ['SupplierAlias', 'SupplierName', 'Supplier'])
+      supplierName:   pick(M, ['SupplierAlias', 'SupplierName', 'Supplier']),
+      departmentShortName: pick(M, ['DepartmentShortName', 'Department Short Name', 'DeptShortName', 'Department']),
+      categoryShortName:   pick(M, ['CategoryShortName', 'Category Short Name', 'Category'])
     };
     const nothing = !out.articleNo && !out.cashmemoNo && !out.purchasedDate && !out.soldReturnDate && !out.colorName && !out.size;
     if (nothing) return res.json(null);

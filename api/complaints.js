@@ -76,7 +76,8 @@ async function create(req, res) {
       c.articleNo || '', c.imageUrl || '', c.colorName || '', c.contrast || '', c.size || '',
       c.soldDate || '', c.soldReturnDate || '', c.purchasedDate || '', c.cashmemoNo || '', c.supplierName || '',
       c.complaintReason || '', c.approver || '', c.remarks || '', c.challanNo || '', c.debitNo || '',
-      c.status || 'Pending', links[0], links[1], links[2], links[3], '', '', '', istNow()
+      c.status || 'Pending', links[0], links[1], links[2], links[3], '', '', '', istNow(),
+      c.departmentShortName || '', c.categoryShortName || ''
     ];
     if (row.length !== COMPLAINT_HEADERS.length) throw new Error('Row/column count mismatch');
     await appendComplaint(row);
@@ -105,6 +106,7 @@ async function list(req, res) {
         supplierName: field(r, 'SupplierName'), complaintReason: field(r, 'ComplaintReason'),
         approver: field(r, 'Approver'), remarks: field(r, 'Remarks'),
         challanNo: field(r, 'ChallanNo'), debitNo: field(r, 'DebitNo'), status: field(r, 'Status'),
+        departmentShortName: field(r, 'DepartmentShortName'), categoryShortName: field(r, 'CategoryShortName'),
         images,
         followup: (fc || fr || fm) ? { color: fc, reason: fr, remarks: fm } : null
       };
