@@ -62,8 +62,9 @@
   .role-badge{font-size:10px;font-weight:800;text-transform:uppercase;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:20px;margin-left:6px}
   .topbar .logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px}
   .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:20}
-  .tabs button{flex:1;padding:13px 6px;border:none;background:transparent;font-weight:700;font-size:13px;color:var(--muted);border-bottom:3px solid transparent}
+  .tabs button{flex:1 1 0;min-width:0;min-height:48px;padding:6px 6px;border:none;background:transparent;font-weight:700;font-size:12.5px;line-height:1.15;color:var(--muted);border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;text-align:center}
   .tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
+  @media(max-width:420px){.tabs button{font-size:11px;padding:6px 3px}}
   .page{padding:16px;max-width:var(--wrap);margin:0 auto;width:100%;flex:1}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
   .card h2{margin:0 0 4px;font-size:16px;color:var(--brand-dark)}
