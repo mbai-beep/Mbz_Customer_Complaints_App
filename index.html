@@ -315,6 +315,7 @@ const API = {
   async listComplaints(storecode,all){ const r=await fetch(`${API_BASE}/api/complaints?storecode=${encodeURIComponent(storecode)}${all?'&scope=all':''}`); return r.json(); },
   async saveFollowup(p){ const r=await fetch(`${API_BASE}/api/followup`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
   async nextSerial(storecode){ const r=await fetch(`${API_BASE}/api/serial?storecode=${encodeURIComponent(storecode)}`); return (await r.json()).serial; },
+  async forgot(storecode){ const r=await fetch(`${API_BASE}/api/forgot`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({storecode})}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
   async admin(action,extra){ const body=Object.assign({action,adminCode:SESSION.storecode,adminPassword:SESSION.password},extra||{}); const r=await fetch(`${API_BASE}/api/admin`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} }
 };
 
@@ -346,8 +347,13 @@ $("loginForm").addEventListener("submit",async e=>{
   $("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");
   configureForRole();
 });
-$("forgotBtn").addEventListener("click",()=>{
-  toast("Default password is MBZ + your store code (e.g. MBZ1024). If it was changed, contact Admin (store 2626) to reset it.");
+$("forgotBtn").addEventListener("click",async ()=>{
+  const code=($("storecode").value.trim())||((prompt("Enter your Store Code to reset your password:")||"").trim());
+  if(!code)return;
+  if(!confirm("Reset the password for "+code+" back to the default (MBZ"+code+")?"))return;
+  const res=await API.forgot(code);
+  if(res&&res.ok){ $("loginErr").textContent=""; $("password").value=""; toast("Password reset. Log in with  MBZ"+code); }
+  else toast("Reset failed: "+((res&&res.error)||""));
 });
 $("pwdEye").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("pwdEye").style.opacity=p.type==="text"?"1":".6";});
 $("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SESSION={storecode:null,role:'store',password:null}; currentImages=[]; $("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginForm").reset(); });
