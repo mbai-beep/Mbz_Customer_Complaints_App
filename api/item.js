@@ -42,9 +42,10 @@ module.exports = async (req, res) => {
     const M = {};
     [r, p, s].forEach(src => { for (const k of Object.keys(src)) { if (src[k] != null && src[k] !== '') M[k] = src[k]; else if (!(k in M)) M[k] = src[k]; } });
 
-    // Sold Return Date: first non-empty across all PRT rows
-    let returnDate = '';
-    for (const rr of prtRows) { const v = pick(rr, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i); if (v) { returnDate = v; break; } }
+    // Sold Return Date + PurReturnId: first non-empty across all PRT rows
+    let returnDate = '', purReturnId = '';
+    for (const rr of prtRows) { if (!returnDate) { const v = pick(rr, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i); if (v) returnDate = v; } }
+    for (const rr of prtRows) { const v = pick(rr, ['PurReturnId', 'PurReturnID', 'purreturnid', 'Pur_Return_Id'], /return.*id$/i); if (v) { purReturnId = v; break; } }
 
     const out = {
       articleNo:           pick(M, ['ArticleNo', 'Article No', 'Article'], /article\s*no|^article$/i),
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
       categoryShortName:   pick(M, ['CategoryShortName', 'Category Short Name', 'Category'], /categor/i),
       soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
       soldReturnDate:      d(returnDate),
+      purReturnId:         purReturnId,
       purchasedDate:       d(pick(M, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
       cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
       supplierName:        pick(M, ['SupplierAlias', 'SupplierName', 'Supplier'], /supplier/i)
