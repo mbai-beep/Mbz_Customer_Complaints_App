@@ -1,9 +1,5 @@
-/* POST /api/forgot  — 3-step OTP password reset.
-   actions:
-     sendOtp      { storecode, mobile }            -> verify mobile, issue OTP (demo: returned)
-     verifyOtp    { storecode, otp }               -> check OTP
-     resetPassword{ storecode, otp, newPassword }  -> apply rules, set password (60-day expiry) */
-const { query, ensureUsersTable, getUser, storeInfo, roleFor } = require('../lib/users');
+/* POST /api/forgot  — 3-step OTP password reset (works for all roles). */
+const { query, ensureUsersTable, getUser, getPwMeta, storeInfo, roleFor } = require('../lib/users');
 
 const OTP_TTL_MIN = 5;
 const EXPIRY_DAYS = 60;
@@ -35,8 +31,7 @@ module.exports = async (req, res) => {
       const expiresat = new Date(Date.now() + OTP_TTL_MIN * 60 * 1000).toISOString();
       await query(`INSERT INTO otp_codes (storecode,otp,expiresat) VALUES (?,?,?)
         ON CONFLICT(storecode) DO UPDATE SET otp=excluded.otp, expiresat=excluded.expiresat`, [code, otp, expiresat]);
-      // SMS gateway not configured -> demo mode returns the OTP so it can be shown on screen
-      return res.json({ ok: true, demo: true, otp });
+      return res.json({ ok: true, demo: true, otp });   // SMS not configured -> show OTP
     }
 
     if (b.action === 'verifyOtp') {
@@ -53,22 +48,27 @@ module.exports = async (req, res) => {
 
       const u = await getUser(code);
       const current = u ? u.password : ('MBZ' + code);
-      let hist = [];
-      try { hist = u && u.passwordhistory ? JSON.parse(u.passwordhistory) : []; } catch (_) {}
-      const recent = [current, ...hist].filter(Boolean);
+      const meta = await getPwMeta(code);
+      const recent = [current, ...(meta.history || [])].filter(Boolean);
       if (recent.slice(0, 3).includes(np)) return res.json({ ok: false, error: 'Cannot match any of your last 3 passwords.' });
 
-      const newHist = [current, ...hist].filter(Boolean).slice(0, 3);
+      const newHist = [current, ...(meta.history || [])].filter(Boolean).slice(0, 3);
       const expiry = new Date(Date.now() + EXPIRY_DAYS * 24 * 3600 * 1000).toISOString();
       const now = new Date().toISOString();
-      const role = (await storeInfo(code))?.role || roleFor(code);
+      const info = await storeInfo(code);
+      const role = (info && info.role) || roleFor(code);
+
+      // write password to users (only original columns)
       if (u) {
-        await query('UPDATE users SET password=?, passwordhistory=?, passwordexpiry=?, enabled=?, updatedat=? WHERE storecode=?',
-          [np, JSON.stringify(newHist), expiry, '1', now, code]);
+        await query('UPDATE users SET password=?, enabled=?, updatedat=? WHERE storecode=?', [np, '1', now, code]);
       } else {
-        await query(`INSERT INTO users (storecode,password,role,enabled,passwordhistory,passwordexpiry,updatedat)
-          VALUES (?,?,?,?,?,?,?)`, [code, np, role, '1', JSON.stringify(newHist), expiry, now]);
+        await query('INSERT INTO users (storecode,password,role,enabled,storename,updatedat) VALUES (?,?,?,?,?,?)',
+          [code, np, role, '1', info ? info.storename : '', now]);
       }
+      // write history + expiry to pw_meta
+      await query(`INSERT INTO pw_meta (storecode,history,expiry) VALUES (?,?,?)
+        ON CONFLICT(storecode) DO UPDATE SET history=excluded.history, expiry=excluded.expiry`,
+        [code, JSON.stringify(newHist), expiry]);
       await query('DELETE FROM otp_codes WHERE storecode = ?', [code]);
       return res.json({ ok: true });
     }
