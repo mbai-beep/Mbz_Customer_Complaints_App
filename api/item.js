@@ -54,10 +54,10 @@ module.exports = async (req, res) => {
       size:                pick(M, ['SizeName', 'Size'], /(^|[^a-z])size([^a-z]|$)/i),
       departmentShortName: pick(M, ['DepartmentShortName', 'Department Short Name', 'DeptShortName', 'Department'], /depart/i),
       categoryShortName:   pick(M, ['CategoryShortName', 'Category Short Name', 'Category'], /categor/i),
-      soldDate:            d(pick(M, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
-      soldReturnDate:      d(pick(r, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i)), // PRT view ONLY
+      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),      // SLS latest row
+      soldReturnDate:      d(pick(r, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i)),   // PRT view ONLY
       purchasedDate:       d(pick(M, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
-      cashmemoNo:          pick(M, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
+      cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),        // SLS latest CashmemoNo (by CashmemoDt DESC)
       supplierName:        pick(M, ['SupplierAlias', 'SupplierName', 'Supplier'], /supplier/i)
     };
     const nothing = !out.articleNo && !out.cashmemoNo && !out.purchasedDate && !out.soldReturnDate && !out.colorName && !out.size;

@@ -50,6 +50,12 @@
   .btn.gold{background:var(--brand-dark);color:#fff}
   .btn.danger{background:#f4dede;color:var(--danger);border:1.5px solid #e7b7b7}
   .login-foot{text-align:center;color:var(--brand-dark);font-size:12px;font-weight:700;margin-top:16px;opacity:.85}
+  #forgotScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:42px 16px 30px;background:linear-gradient(170deg,var(--login-bg1),var(--login-bg2))}
+  .fp-dots{display:flex;gap:6px;margin-bottom:18px}
+  .fp-dot{height:6px;border-radius:4px;background:var(--line);flex:1}
+  .fp-dot.on{background:var(--brand)}
+  .fp-rules{background:#fdf6e3;border-left:4px solid var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:#6a5a2a}
+  .fp-demo{background:#eef4fa;border:1px solid var(--brand-light);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--brand-dark);margin:0 0 14px}
   .err{color:var(--danger);font-size:13px;margin-top:12px;min-height:18px;font-weight:600;text-align:center}
 
   /* APP */
@@ -158,6 +164,48 @@
         <div class="err" id="loginErr"></div>
       </form>
       <div class="login-foot">Mbz Complaints · v2 · Store • Manager • Admin</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD (3-step OTP) -->
+<div id="forgotScreen" class="hidden">
+  <img src="meena_bazaar_logo.png" alt="Meena Bazaar" class="brand-logo">
+  <div class="login-card">
+    <div class="login-head" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
+      <h1 style="font-size:18px;margin:0">Forgot Password</h1>
+      <button class="btn" style="width:auto;padding:8px 14px;background:rgba(255,255,255,.22)" id="fpBack">← Back</button>
+    </div>
+    <div class="login-body">
+      <div class="fp-dots"><div class="fp-dot" id="fpDot1"></div><div class="fp-dot" id="fpDot2"></div><div class="fp-dot" id="fpDot3"></div></div>
+
+      <div id="fpStep1">
+        <div class="welcome" style="font-size:21px">Step 1 of 3</div>
+        <p class="continue">Enter your Employee/Store ID and registered mobile number to receive an OTP.</p>
+        <div class="field"><label>Employee / Store ID</label><input id="fpCode" inputmode="numeric"></div>
+        <div class="field"><label>Registered Mobile</label><input id="fpMobile" inputmode="numeric" placeholder="10-digit mobile"></div>
+        <button class="btn" id="fpSend">Send OTP</button>
+      </div>
+
+      <div id="fpStep2" class="hidden">
+        <div class="welcome" style="font-size:21px">Step 2 of 3</div>
+        <p class="fp-demo hidden" id="fpDemo"></p>
+        <p class="continue" id="fpOtpNote">Enter the 6-digit OTP.</p>
+        <div class="field"><input id="fpOtp" inputmode="numeric" maxlength="6" style="text-align:center;letter-spacing:12px;font-size:22px" placeholder="------"></div>
+        <button class="btn" id="fpVerify">Verify OTP</button>
+        <div style="text-align:center;margin-top:12px"><span class="forgot" id="fpResend">Resend OTP</span></div>
+      </div>
+
+      <div id="fpStep3" class="hidden">
+        <div class="welcome" style="font-size:21px">Step 3 of 3</div>
+        <p class="continue">Enter your new password.</p>
+        <div class="fp-rules"><b>Password rules:</b><br>• Minimum 6 characters<br>• Cannot match any of your last 3 passwords<br>• Will expire 60 days from today</div>
+        <div class="field"><label>New Password</label><div class="pwd-wrap"><input id="fpNew" type="password" placeholder="Min. 6 characters"><button type="button" class="pwd-eye" onclick="fpEye('fpNew')">👁️</button></div></div>
+        <div class="field"><label>Confirm Password</label><div class="pwd-wrap"><input id="fpConfirm" type="password" placeholder="Re-enter new password"><button type="button" class="pwd-eye" onclick="fpEye('fpConfirm')">👁️</button></div></div>
+        <button class="btn" id="fpSet">Set New Password</button>
+      </div>
+
+      <div class="err" id="fpErr"></div>
     </div>
   </div>
 </div>
@@ -316,7 +364,7 @@ const API = {
   async listComplaints(storecode,all){ const r=await fetch(`${API_BASE}/api/complaints?storecode=${encodeURIComponent(storecode)}${all?'&scope=all':''}`); return r.json(); },
   async saveFollowup(p){ const r=await fetch(`${API_BASE}/api/followup`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
   async nextSerial(storecode){ const r=await fetch(`${API_BASE}/api/serial?storecode=${encodeURIComponent(storecode)}`); return (await r.json()).serial; },
-  async forgot(storecode){ const r=await fetch(`${API_BASE}/api/forgot`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({storecode})}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
+  async forgot(action,extra){ const r=await fetch(`${API_BASE}/api/forgot`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action},extra||{}))}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} },
   async admin(action,extra){ const body=Object.assign({action,adminCode:SESSION.storecode,adminPassword:SESSION.password},extra||{}); const r=await fetch(`${API_BASE}/api/admin`,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const t=await r.text(); try{return JSON.parse(t)}catch(_){return{ok:false,error:`HTTP ${r.status}`}} }
 };
 
@@ -348,19 +396,41 @@ $("loginForm").addEventListener("submit",async e=>{
   $("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");
   configureForRole();
 });
-$("forgotBtn").addEventListener("click",async ()=>{
-  const code=($("storecode").value.trim())||((prompt("Enter your Store Code to reset your password:")||"").trim());
-  if(!code)return;
-  if(!confirm("Reset the password for "+code+" back to the default (MBZ"+code+")?"))return;
-  const res=await API.forgot(code);
-  if(res&&res.ok){ $("loginErr").textContent=""; $("password").value=""; toast("Password reset. Log in with  MBZ"+code); }
-  else toast("Reset failed: "+((res&&res.error)||""));
+$("forgotBtn").addEventListener("click",()=>{
+  $("fpCode").value=$("storecode").value.trim(); $("fpMobile").value="";$("fpOtp").value="";$("fpNew").value="";$("fpConfirm").value="";$("fpDemo").classList.add("hidden");
+  $("loginScreen").classList.add("hidden"); $("forgotScreen").classList.remove("hidden"); fpStep(1);
+});
+$("fpBack").addEventListener("click",()=>{ $("forgotScreen").classList.add("hidden"); $("loginScreen").classList.remove("hidden"); });
+function fpStep(n){ [1,2,3].forEach(i=>{ $("fpStep"+i).classList.toggle("hidden",i!==n); $("fpDot"+i).classList.toggle("on",i<=n); }); $("fpErr").textContent=""; }
+function fpEye(id){ const p=$(id); p.type=p.type==="password"?"text":"password"; }
+async function fpSendOtp(){
+  const code=$("fpCode").value.trim(), mobile=$("fpMobile").value.trim();
+  if(!code||!mobile){ $("fpErr").textContent="Enter your ID and registered mobile."; return; }
+  const b=$("fpSend"); b.disabled=true; b.textContent="Sending…";
+  const res=await API.forgot('sendOtp',{storecode:code,mobile});
+  b.disabled=false; b.textContent="Send OTP";
+  if(res&&res.ok){ fpStep(2); if(res.demo&&res.otp){ $("fpDemo").innerHTML="⚠ <b>Demo Mode:</b> SMS not configured. Your OTP is: <b>"+res.otp+"</b>"; $("fpDemo").classList.remove("hidden"); } else $("fpDemo").classList.add("hidden"); }
+  else $("fpErr").textContent=(res&&res.error)||"Could not send OTP.";
+}
+$("fpSend").addEventListener("click",fpSendOtp);
+$("fpResend").addEventListener("click",fpSendOtp);
+$("fpVerify").addEventListener("click",async ()=>{
+  const res=await API.forgot('verifyOtp',{storecode:$("fpCode").value.trim(),otp:$("fpOtp").value.trim()});
+  if(res&&res.ok) fpStep(3); else $("fpErr").textContent=(res&&res.error)||"Invalid OTP.";
+});
+$("fpSet").addEventListener("click",async ()=>{
+  const code=$("fpCode").value.trim(), otp=$("fpOtp").value.trim(), np=$("fpNew").value, cp=$("fpConfirm").value;
+  if(np.length<6){ $("fpErr").textContent="Password must be at least 6 characters."; return; }
+  if(np!==cp){ $("fpErr").textContent="Passwords do not match."; return; }
+  const res=await API.forgot('resetPassword',{storecode:code,otp,newPassword:np});
+  if(res&&res.ok){ $("forgotScreen").classList.add("hidden"); $("loginScreen").classList.remove("hidden"); $("storecode").value=code; $("password").value=""; toast("Password updated. Please log in."); }
+  else $("fpErr").textContent=(res&&res.error)||"Could not set password.";
 });
 $("pwdEye").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("pwdEye").style.opacity=p.type==="text"?"1":".6";});
 $("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SESSION={storecode:null,role:'store',password:null}; currentImages=[]; $("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginForm").reset(); });
 
 function configureForRole(){
-  const isStore=SESSION.role==='store', isAdmin=SESSION.role==='admin';
+  const isStore=SESSION.role==='employee', isAdmin=SESSION.role==='admin';
   $("tabBtn1").classList.remove("hidden");               // New Complaint available to all roles
   $("tabBtn3").classList.toggle("hidden",!isAdmin);      // admin tab
   $("histTitle").textContent = isStore ? "My Complaints" : "All Complaints (all stores)";
@@ -425,12 +495,12 @@ $("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("
 /* SECTION 2 */
 async function renderHistory(){
   const list=$("historyList");
-  const all=SESSION.role!=='store';
+  const all=SESSION.role!=='employee';
   STORE.complaints=await API.listComplaints(SESSION.storecode,all);
   const q=($("searchInput").value||"").toLowerCase();
   const data=(STORE.complaints||[]).filter(c=>!q||[c.ticketId,c.itemId,c.articleNo,c.storecode,c.storename].join(" ").toLowerCase().includes(q));
   if(!data.length){list.innerHTML=`<div class="empty">No complaints found.</div>`;return;}
-  const isAdmin=SESSION.role==='admin', canReview=SESSION.role!=='store';
+  const isAdmin=SESSION.role==='admin', canReview=SESSION.role!=='employee';
   list.innerHTML=data.map(c=>{
     const img=driveThumb((c.images&&c.images[0])||c.imageUrl||"");
     const raw=(c.status||"Pending").toLowerCase();
