@@ -84,7 +84,7 @@ async function create(req, res) {
       c.departmentShortName || '', c.categoryShortName || ''
     ];
     if (row.length !== COMPLAINT_HEADERS.length) throw new Error('Row/column count mismatch');
-    await appendComplaint(row);
+    await appendComplaint(row.map(v => (v == null ? '' : (typeof v === 'object' ? '' : String(v)))));
     res.json({ ok: true, ticketId });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
