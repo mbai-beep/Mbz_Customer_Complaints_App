@@ -111,6 +111,7 @@ async function list(req, res) {
         approver: field(r, 'Approver'), remarks: field(r, 'Remarks'),
         challanNo: field(r, 'ChallanNo'), debitNo: field(r, 'DebitNo'), status: field(r, 'Status'),
         departmentShortName: field(r, 'DepartmentShortName'), categoryShortName: field(r, 'CategoryShortName'),
+        createdAt: field(r, 'CreatedAt'),
         images,
         followup: (fc || fr || fm) ? { color: fc, reason: fr, remarks: fm } : null
       };

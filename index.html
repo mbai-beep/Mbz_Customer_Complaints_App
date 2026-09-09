@@ -97,6 +97,11 @@
   .row-actions .btn{width:auto;flex:1;min-width:130px}
   .search-bar{display:flex;gap:8px;margin-bottom:14px}
   .search-bar input{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;background:#fff;outline:none}
+  .filter-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;margin-bottom:12px}
+  .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .filter-row>div{flex:1 1 120px;min-width:110px}
+  .filter-row label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+  .filter-row input,.filter-row select{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff;outline:none;font-size:14px}
   .complaint{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
   .complaint .head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .complaint .tid{font-weight:800;color:var(--brand-dark);font-size:14.5px}
@@ -289,6 +294,14 @@
       <span class="section-tag">SECTION 2 · COMPLAINTS HISTORY</span>
       <h2 id="histTitle">All Complaints</h2>
       <p class="desc" id="histDesc">Review complaints, add manager details and print.</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-row">
+        <div><label>From</label><input type="date" id="fltFrom" onchange="renderHistory()"></div>
+        <div><label>To</label><input type="date" id="fltTo" onchange="renderHistory()"></div>
+        <div><label>Status</label><select id="fltStatus" onchange="renderHistory()"><option value="">All</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
+        <button class="btn secondary" id="fltClear" style="width:auto;align-self:end;padding:11px 14px">Clear</button>
+      </div>
     </div>
     <div class="search-bar"><input id="searchInput" placeholder="Search by Ticket ID, Item ID, Article or Store…" oninput="renderHistory()"></div>
     <div id="historyList"></div>
@@ -489,16 +502,30 @@ $("complaintForm").addEventListener("submit",async e=>{
 });
 function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
 function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
+$("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("searchInput").value="";renderHistory(); });
 $("resetBtn").addEventListener("click",resetForm);
 $("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printComplaint(collectForm());});
 
 /* SECTION 2 */
+function cDate(c){
+  const s=String(c.createdAt||c.ticketDate||"");
+  let m=s.match(/(\d{2})-(\d{2})-(\d{4})/); if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  m=s.match(/(\d{4})-(\d{2})-(\d{2})/); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const d=new Date(s); if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return "";
+}
 async function renderHistory(){
   const list=$("historyList");
   const all=SESSION.role!=='employee';
   STORE.complaints=await API.listComplaints(SESSION.storecode,all);
   const q=($("searchInput").value||"").toLowerCase();
-  const data=(STORE.complaints||[]).filter(c=>!q||[c.ticketId,c.itemId,c.articleNo,c.storecode,c.storename].join(" ").toLowerCase().includes(q));
+  const from=$("fltFrom").value, to=$("fltTo").value, st=($("fltStatus").value||"").toLowerCase();
+  const data=(STORE.complaints||[]).filter(c=>{
+    if(q && ![c.ticketId,c.itemId,c.articleNo,c.storecode,c.storename].join(" ").toLowerCase().includes(q)) return false;
+    if(st && String(c.status||"Pending").toLowerCase()!==st) return false;
+    if(from||to){ const cd=cDate(c); if(cd){ if(from&&cd<from)return false; if(to&&cd>to)return false; } }
+    return true;
+  });
   if(!data.length){list.innerHTML=`<div class="empty">No complaints found.</div>`;return;}
   const isAdmin=SESSION.role==='admin', canReview=SESSION.role!=='employee';
   list.innerHTML=data.map(c=>{
