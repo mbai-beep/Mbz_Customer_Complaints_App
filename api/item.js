@@ -1,13 +1,11 @@
 /* GET /api/item?itemId=...  ->  merged item record from the 3 SQL Server views.
-   Queries ALL three views, merges every column, then fills each field from whichever
-   view has a value — matching by known names first, then by a tolerant pattern — so a
-   differently-named column in any view still gets picked up.
-   Sold Return Date is taken ONLY from the Purchase-Return view. */
+   General fields merge from whichever view has them. Sold Return Date is scanned
+   across ALL Purchase-Return rows for the item (first non-empty value). */
 const { getPool } = require('../lib/sqlserver');
 
 const SALES = 'SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
 const PUR   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id';
-const PRT   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id';
+const PRT   = 'SELECT TOP 50 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id';
 
 const d = v => v == null ? '' : (v instanceof Date ? v.toISOString().slice(0, 10) : String(v));
 
@@ -34,17 +32,19 @@ module.exports = async (req, res) => {
   if (!itemId) return res.status(400).json(null);
   try {
     const pool = await getPool();
-    const run = async (q) => {
-      try { const r = await pool.request().input('id', itemId).query(q); return r.recordset[0] || {}; }
-      catch (e) { return { __error: e.message }; }
-    };
-    const [S, P, R] = await Promise.all([run(SALES), run(PUR), run(PRT)]);
-    if (S.__error && P.__error && R.__error) return res.status(500).json({ error: S.__error });
+    const run = async (q) => { try { const r = await pool.request().input('id', itemId).query(q); return r.recordset[0] || {}; } catch (e) { return { __error: e.message }; } };
+    const runRows = async (q) => { try { const r = await pool.request().input('id', itemId).query(q); return r.recordset || []; } catch (e) { return []; } };
 
-    const s = S.__error ? {} : S, p = P.__error ? {} : P, r = R.__error ? {} : R;
-    // merge all three (a view with a real value wins over an empty one for the same column)
+    const [S, P, prtRows] = await Promise.all([run(SALES), run(PUR), runRows(PRT)]);
+    if (S.__error && P.__error && !prtRows.length) return res.status(500).json({ error: S.__error });
+
+    const s = S.__error ? {} : S, p = P.__error ? {} : P, r = prtRows[0] || {};
     const M = {};
     [r, p, s].forEach(src => { for (const k of Object.keys(src)) { if (src[k] != null && src[k] !== '') M[k] = src[k]; else if (!(k in M)) M[k] = src[k]; } });
+
+    // Sold Return Date: first non-empty across all PRT rows
+    let returnDate = '';
+    for (const rr of prtRows) { const v = pick(rr, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i); if (v) { returnDate = v; break; } }
 
     const out = {
       articleNo:           pick(M, ['ArticleNo', 'Article No', 'Article'], /article\s*no|^article$/i),
@@ -54,10 +54,10 @@ module.exports = async (req, res) => {
       size:                pick(M, ['SizeName', 'Size'], /(^|[^a-z])size([^a-z]|$)/i),
       departmentShortName: pick(M, ['DepartmentShortName', 'Department Short Name', 'DeptShortName', 'Department'], /depart/i),
       categoryShortName:   pick(M, ['CategoryShortName', 'Category Short Name', 'Category'], /categor/i),
-      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),      // SLS latest row
-      soldReturnDate:      d(pick(r, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i)),   // PRT view ONLY
+      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
+      soldReturnDate:      d(returnDate),
       purchasedDate:       d(pick(M, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
-      cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),        // SLS latest CashmemoNo (by CashmemoDt DESC)
+      cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
       supplierName:        pick(M, ['SupplierAlias', 'SupplierName', 'Supplier'], /supplier/i)
     };
     const nothing = !out.articleNo && !out.cashmemoNo && !out.purchasedDate && !out.soldReturnDate && !out.colorName && !out.size;

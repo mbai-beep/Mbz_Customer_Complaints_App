@@ -130,6 +130,7 @@
   .modal h3{margin:0 0 14px;color:var(--brand-dark)}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1f2430;color:#fff;padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.3);z-index:80;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
   .toast.show{opacity:1}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .req:after{content:" *";color:var(--danger)}
   .help{font-size:11px;color:var(--muted);margin-top:4px}
 </style>
@@ -361,6 +362,12 @@
   </div>
 </div>
 
+<div id="processing" class="hidden" style="position:fixed;inset:0;background:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;z-index:100">
+  <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 24px;font-weight:700;color:var(--brand-dark);box-shadow:0 10px 30px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px">
+    <span style="width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;display:inline-block;animation:spin .8s linear infinite"></span>
+    Submitting complaint… please wait
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -496,7 +503,13 @@ $("complaintForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!$("articleNo").value){toast("Fetch item details before submitting.");return;}
   const payload=collectForm();
-  const res=await API.submitComplaint(payload);
+  const btn=e.submitter||$("complaintForm").querySelector('button[type=submit]');
+  const prev=btn?btn.textContent:"";
+  if(btn){btn.disabled=true;btn.textContent="Submitting…";}
+  $("processing").classList.remove("hidden");
+  let res;
+  try{ res=await API.submitComplaint(payload); }
+  finally{ $("processing").classList.add("hidden"); if(btn){btn.disabled=false;btn.textContent=prev||"Submit Complaint";} }
   if(res&&res.ok){toast("Complaint "+(res.ticketId||payload.ticketId)+" submitted.");resetForm();await newTicket();}
   else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
@@ -527,7 +540,7 @@ async function renderHistory(){
     return true;
   });
   if(!data.length){list.innerHTML=`<div class="empty">No complaints found.</div>`;return;}
-  const isAdmin=SESSION.role==='admin', canReview=SESSION.role!=='employee';
+  const isAdmin=SESSION.role==='admin', canReview=(SESSION.role==='manager'||SESSION.role==='admin');
   list.innerHTML=data.map(c=>{
     const img=driveThumb((c.images&&c.images[0])||c.imageUrl||"");
     const raw=(c.status||"Pending").toLowerCase();
