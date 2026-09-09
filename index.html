@@ -377,7 +377,7 @@ function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");cle
 function fmtNow(){return new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 /* convert a Google Drive link to an inline-renderable thumbnail URL */
-function driveThumb(u){ if(!u)return''; const m=String(u).match(/[-\w]{25,}/); return m?`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`:u; }
+function driveThumb(u){ if(!u)return''; u=String(u); if(!/drive\.google\.com|googleusercontent\.com/i.test(u)) return u; const m=u.match(/[-\w]{25,}/); return m?`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`:u; }
 
 /* LOGIN */
 $("loginForm").addEventListener("submit",async e=>{

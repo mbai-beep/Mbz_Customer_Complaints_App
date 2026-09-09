@@ -66,8 +66,12 @@ async function create(req, res) {
     const imgs = Array.isArray(c.images) ? c.images.slice(0, 4) : [];
     const links = [];
     if (imgs.length) {
-      const folderId = await getStoreFolder(drive, code);
-      for (let i = 0; i < imgs.length; i++) links.push(await uploadImage(drive, imgs[i], `${ticketId}_${i + 1}.jpg`, folderId));
+      let folderId = DRIVE_FOLDER_ID;
+      try { folderId = await getStoreFolder(drive, code); } catch (e) { folderId = DRIVE_FOLDER_ID; }
+      for (let i = 0; i < imgs.length; i++) {
+        try { links.push(await uploadImage(drive, imgs[i], `${ticketId}_${i + 1}.jpg`, folderId)); }
+        catch (e) { links.push(''); }   // a Drive failure must not block saving the complaint
+      }
     }
     while (links.length < 4) links.push('');
 
