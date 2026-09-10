@@ -7,6 +7,7 @@
 const { getPool } = require('../lib/sqlserver');
 
 const SALES = 'SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
+const SOLD  = 'SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id AND SalesQuantity > 0 ORDER BY CashmemoDt DESC';
 const PUR   = 'SELECT TOP 1 * FROM VW_MB_POWERBI_PUR_REPORT WHERE ItemId = @id';
 const PRT   = 'SELECT TOP 50 * FROM VW_MB_POWERBI_PRT_REPORT WHERE ItemId = @id';
 
@@ -38,10 +39,11 @@ module.exports = async (req, res) => {
     const run = async (q) => { try { const r = await pool.request().input('id', itemId).query(q); return r.recordset[0] || {}; } catch (e) { return { __error: e.message }; } };
     const runRows = async (q) => { try { const r = await pool.request().input('id', itemId).query(q); return r.recordset || []; } catch (e) { return []; } };
 
-    const [S, P, prtRows] = await Promise.all([run(SALES), run(PUR), runRows(PRT)]);
+    const [S, SD, P, prtRows] = await Promise.all([run(SALES), run(SOLD), run(PUR), runRows(PRT)]);
     if (S.__error && P.__error && !prtRows.length) return res.status(500).json({ error: S.__error });
 
     const s = S.__error ? {} : S, p = P.__error ? {} : P;
+    const sd = SD.__error ? {} : SD;   // latest SLS row with SalesQuantity > 0 (SoldDate only)
 
     let returnDate = '', purReturnId = '';
     for (const rr of prtRows) { if (!returnDate) { const v = pick(rr, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i); if (v) returnDate = v; } }
@@ -58,7 +60,7 @@ module.exports = async (req, res) => {
       purchasedDate:       d(pick(p, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
       purReturnId:         purReturnId,
       soldReturnDate:      d(returnDate),
-      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
+      soldDate:            d(pick(sd, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
       cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
       supplierName:        pick(s, ['SupplierName', 'SupplierAlias', 'Supplier'], /supplier/i),
       itemMRP:             pick(s, ['ItemMRP', 'Item MRP', 'MRP', 'ItemMrp'], /\bmrp\b/i),
