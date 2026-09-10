@@ -1,6 +1,9 @@
-/* GET /api/item?itemId=...  ->  merged item record from the 3 SQL Server views.
-   General fields merge from whichever view has them. Sold Return Date is scanned
-   across ALL Purchase-Return rows for the item (first non-empty value). */
+/* GET /api/item?itemId=...  ->  item record with each field sourced from its
+   specific view:
+     Sales (SLS): Article, Colour, Contrast, Size, Department, Category, SoldDate,
+                  CashmemoNo, SupplierName, ItemMRP, SalesCost
+     Purchase (PUR): PurchasedDate
+     Purchase-Return (PRT): PurReturnId, PurchaseReturnDate */
 const { getPool } = require('../lib/sqlserver');
 
 const SALES = 'SELECT TOP 1 * FROM VW_MB_POWERBI_SLS_DATA_WITHOUT_ITEMID WHERE ItemId = @id ORDER BY CashmemoDt DESC';
@@ -38,31 +41,30 @@ module.exports = async (req, res) => {
     const [S, P, prtRows] = await Promise.all([run(SALES), run(PUR), runRows(PRT)]);
     if (S.__error && P.__error && !prtRows.length) return res.status(500).json({ error: S.__error });
 
-    const s = S.__error ? {} : S, p = P.__error ? {} : P, r = prtRows[0] || {};
-    const M = {};
-    [r, p, s].forEach(src => { for (const k of Object.keys(src)) { if (src[k] != null && src[k] !== '') M[k] = src[k]; else if (!(k in M)) M[k] = src[k]; } });
+    const s = S.__error ? {} : S, p = P.__error ? {} : P;
 
-    // Sold Return Date + PurReturnId: first non-empty across all PRT rows
     let returnDate = '', purReturnId = '';
     for (const rr of prtRows) { if (!returnDate) { const v = pick(rr, ['purreturndate', 'PurReturnDt', 'PurReturnDate'], /return.*d(t|ate)/i); if (v) returnDate = v; } }
     for (const rr of prtRows) { const v = pick(rr, ['PurReturnId', 'PurReturnID', 'purreturnid', 'Pur_Return_Id'], /return.*id$/i); if (v) { purReturnId = v; break; } }
 
     const out = {
-      articleNo:           pick(M, ['ArticleNo', 'Article No', 'Article'], /article\s*no|^article$/i),
-      imageUrl:            pickImage(M),
-      colorName:           pick(M, ['ColourName', 'ColorName', 'Colour', 'Color'], /colou?r.*name|^colou?r$/i),
-      contrast:            pick(M, ['ContrastName', 'Contrast'], /contrast/i),
-      size:                pick(M, ['SizeName', 'Size'], /(^|[^a-z])size([^a-z]|$)/i),
-      departmentShortName: pick(M, ['DepartmentShortName', 'Department Short Name', 'DeptShortName', 'Department'], /depart/i),
-      categoryShortName:   pick(M, ['CategoryShortName', 'Category Short Name', 'Category'], /categor/i),
-      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
-      soldReturnDate:      d(returnDate),
+      articleNo:           pick(s, ['ArticleNo', 'Article No', 'Article'], /article\s*no|^article$/i),
+      imageUrl:            pickImage(s),
+      colorName:           pick(s, ['ColourName', 'ColorName', 'Colour', 'Color'], /colou?r.*name|^colou?r$/i),
+      contrast:            pick(s, ['ContrastName', 'Contrast'], /contrast/i),
+      size:                pick(s, ['SizeName', 'Size'], /(^|[^a-z])size([^a-z]|$)/i),
+      departmentShortName: pick(s, ['DepartmentShortName', 'Department Short Name', 'DeptShortName', 'Department'], /depart/i),
+      categoryShortName:   pick(s, ['CategoryShortName', 'Category Short Name', 'Category'], /categor/i),
+      purchasedDate:       d(pick(p, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
       purReturnId:         purReturnId,
-      purchasedDate:       d(pick(M, ['PurchaseDt', 'PurchasedDate', 'PurchaseDate'], /purchase.*d(t|ate)/i)),
+      soldReturnDate:      d(returnDate),
+      soldDate:            d(pick(s, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
       cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
-      supplierName:        pick(M, ['SupplierAlias', 'SupplierName', 'Supplier'], /supplier/i)
+      supplierName:        pick(s, ['SupplierName', 'SupplierAlias', 'Supplier'], /supplier/i),
+      itemMRP:             pick(s, ['ItemMRP', 'Item MRP', 'MRP', 'ItemMrp'], /\bmrp\b/i),
+      salesCost:           pick(s, ['SalesCost', 'Sales Cost', 'SaleCost', 'SellingCost', 'Sales_Cost'], /sale?s?\s*cost|selling\s*cost/i)
     };
-    const nothing = !out.articleNo && !out.cashmemoNo && !out.purchasedDate && !out.soldReturnDate && !out.colorName && !out.size;
+    const nothing = !out.articleNo && !out.soldDate && !out.cashmemoNo && !out.colorName && !out.size && !out.purchasedDate && !out.soldReturnDate && !out.purReturnId;
     if (nothing) return res.json(null);
     res.json(out);
   } catch (e) {

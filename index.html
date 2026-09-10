@@ -267,12 +267,14 @@
           <div class="field readonly"><label>Size <span class="ro-badge">auto</span></label><input id="size" readonly></div>
           <div class="field readonly"><label>Department <span class="ro-badge">auto</span></label><input id="departmentShortName" readonly></div>
           <div class="field readonly"><label>Category <span class="ro-badge">auto</span></label><input id="categoryShortName" readonly></div>
-          <div class="field readonly"><label>Sold Date <span class="ro-badge">auto</span></label><input id="soldDate" readonly></div>
-          <div class="field readonly"><label>Sold Return Date <span class="ro-badge">auto</span></label><input id="soldReturnDate" readonly></div>
-          <div class="field readonly"><label>Pur Return Id <span class="ro-badge">auto</span></label><input id="purReturnId" readonly></div>
           <div class="field readonly"><label>Purchased Date <span class="ro-badge">auto</span></label><input id="purchasedDate" readonly></div>
+          <div class="field readonly"><label>Pur Return Id <span class="ro-badge">auto</span></label><input id="purReturnId" readonly></div>
+          <div class="field readonly"><label>Purchase Return Date <span class="ro-badge">auto</span></label><input id="soldReturnDate" readonly></div>
+          <div class="field readonly"><label>Sold Date <span class="ro-badge">auto</span></label><input id="soldDate" readonly></div>
           <div class="field readonly"><label>Cashmemo No <span class="ro-badge">auto</span></label><input id="cashmemoNo" readonly></div>
-          <div class="field readonly full"><label>Supplier Name <span class="ro-badge">auto</span></label><input id="supplierName" readonly></div>
+          <div class="field readonly"><label>Supplier Name <span class="ro-badge">auto</span></label><input id="supplierName" readonly></div>
+          <div class="field readonly"><label>Item MRP <span class="ro-badge">auto</span></label><input id="itemMRP" readonly></div>
+          <div class="field readonly"><label>Sales Cost <span class="ro-badge">auto</span></label><input id="salesCost" readonly></div>
           <div class="field full"><label class="req">Complaint Reason <span class="man-badge">manual</span></label><textarea id="complaintReason" rows="2" placeholder="Describe the complaint reason" required></textarea></div>
           <div class="field full">
             <label>Complaint Images <span class="man-badge">camera / gallery · max 4</span></label>
@@ -338,6 +340,7 @@
     <input type="hidden" id="fuTicket">
     <div class="field"><label>Approval Manager</label><select id="fuApprover"><option value="">— Select manager —</option><option>Chetna</option><option>Sunder</option><option>Prapti</option><option>Vinita</option></select></div>
     <div class="field"><label>Status</label><select id="fuStatus"><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
+    <div class="field"><label>Final Status</label><select id="fuFinal"><option value="">— Select —</option><option>Repair</option><option>Return</option><option>Zero</option></select></div>
     <div class="field"><label>Colour Name</label><input id="fuColor" placeholder="Colour name"></div>
     <div class="field"><label>Reason</label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
     <div class="field"><label>Remarks</label><textarea id="fuRemarks" rows="2" placeholder="Remarks"></textarea></div>
@@ -484,12 +487,12 @@ async function fetchItem(){
   if(!d){toast("No record found for "+id);clearItemFields();return;}
   $("articleNo").value=d.articleNo||"";$("colorName").value=d.colorName||"";$("contrast").value=d.contrast||"";$("size").value=d.size||"";$("departmentShortName").value=d.departmentShortName||"";$("categoryShortName").value=d.categoryShortName||"";
   $("soldDate").value=d.soldDate||"";$("soldReturnDate").value=d.soldReturnDate||"";$("purReturnId").value=d.purReturnId||"";$("purchasedDate").value=d.purchasedDate||"";
-  $("cashmemoNo").value=d.cashmemoNo||"";$("supplierName").value=d.supplierName||"";
+  $("cashmemoNo").value=d.cashmemoNo||"";$("supplierName").value=d.supplierName||"";$("itemMRP").value=d.itemMRP||"";$("salesCost").value=d.salesCost||"";
   $("apArticle").textContent=d.articleNo||"—";$("apColor").textContent=d.colorName||"—";$("apContrast").textContent=d.contrast||"—";$("apSize").textContent=d.size||"—";
   $("apImg").src=driveThumb(d.imageUrl)||"";$("articlePreview").style.display=d.imageUrl?"block":"none";$("articlePreview")._url=d.imageUrl||"";
   toast("Details fetched.");
 }
-function clearItemFields(){["articleNo","colorName","contrast","size","departmentShortName","categoryShortName","soldDate","soldReturnDate","purReturnId","purchasedDate","cashmemoNo","supplierName"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
+function clearItemFields(){["articleNo","colorName","contrast","size","departmentShortName","categoryShortName","soldDate","soldReturnDate","purReturnId","purchasedDate","cashmemoNo","supplierName","itemMRP","salesCost"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
 
 function compressImage(file,maxDim=1280,q=0.7){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>h){if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}}else{if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);resolve(cv.toDataURL('image/jpeg',q));};img.onerror=reject;img.src=fr.result;};fr.onerror=reject;fr.readAsDataURL(file);});}
 function renderImgGrid(){
@@ -514,7 +517,7 @@ $("complaintForm").addEventListener("submit",async e=>{
   if(res&&res.ok){toast("Complaint "+(res.ticketId||payload.ticketId)+" submitted.");resetForm();await newTicket();}
   else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
-function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
+function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
 function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
 $("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("searchInput").value="";renderHistory(); });
 $("resetBtn").addEventListener("click",resetForm);
@@ -546,8 +549,8 @@ async function renderHistory(){
     const img=driveThumb((c.images&&c.images[0])||c.imageUrl||"");
     const raw=(c.status||"Pending").toLowerCase();
     const st=raw==="approved"?"approved":(raw==="rejected"?"rejected":"pending");
-    const reviewed=c.approver||c.challanNo||c.debitNo||(c.followup&&(c.followup.color||c.followup.reason||c.followup.remarks));
-    const fu=reviewed?`<div class="followup-box"><b>Manager Review</b><br>Approver: ${esc(c.approver||'—')} · Colour: ${esc(c.followup?.color||'—')} · Reason: ${esc(c.followup?.reason||'—')}<br>Remarks: ${esc(c.followup?.remarks||'—')}<br>Challan: ${esc(c.challanNo||'—')} · Debit/PR: ${esc(c.debitNo||'—')}</div>`:"";
+    const reviewed=c.approver||c.finalStatus||c.challanNo||c.debitNo||(c.followup&&(c.followup.color||c.followup.reason||c.followup.remarks));
+    const fu=reviewed?`<div class="followup-box"><b>Manager Review</b><br>Approver: ${esc(c.approver||'—')} · Colour: ${esc(c.followup?.color||'—')} · Reason: ${esc(c.followup?.reason||'—')}<br>Remarks: ${esc(c.followup?.remarks||'—')}<br>Challan: ${esc(c.challanNo||'—')} · Debit/PR: ${esc(c.debitNo||'—')}<br>Final Status: ${esc(c.finalStatus||'—')}</div>`:"";
     return `<div class="complaint">
       <div class="head"><div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div>${all?`<div class="store-tag">${esc(c.storecode)} · ${esc(c.storename)}</div>`:""}</div><span class="pill ${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span></div>
       <div class="body">${img?`<img src="${img}" referrerpolicy="no-referrer">`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
@@ -560,11 +563,11 @@ async function renderHistory(){
     </div>`;
   }).join("");
 }
-function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
+function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuFinal").value=c.finalStatus||"";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
 function closeFollowup(){$("followupModal").classList.add("hidden");}
 async function saveFollowup(){
   const tid=$("fuTicket").value;
-  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
+  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
   const res=await API.saveFollowup(payload);
   if(res&&res.ok){closeFollowup();renderHistory();toast("Review saved.");}else toast("Save failed: "+((res&&res.error)||""));
 }
@@ -621,12 +624,13 @@ function printComplaint(c){
       ${row("Ticket ID",c.ticketId)}${row("Date",c.ticketDate)}${row("Item ID",c.itemId)}
       ${row("Article No",c.articleNo)}${row("Color",c.colorName)}${row("Contrast",c.contrast)}${row("Size",c.size)}
       ${row("Department",c.departmentShortName)}${row("Category",c.categoryShortName)}
-      ${row("Sold Date",c.soldDate)}${row("Sold Return Date",c.soldReturnDate)}${row("Pur Return Id",c.purReturnId)}${row("Purchased Date",c.purchasedDate)}
-      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Complaint Reason",c.complaintReason)}
+      ${row("Purchased Date",c.purchasedDate)}${row("Pur Return Id",c.purReturnId)}${row("Purchase Return Date",c.soldReturnDate)}${row("Sold Date",c.soldDate)}
+      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
+      ${row("Complaint Reason",c.complaintReason)}
     </table>
     <h3>Follow-up / Manager Review</h3>
     <table>
-      ${row("Approver",c.approver)}${row("Status",c.status)}
+      ${row("Approver",c.approver)}${row("Status",c.status)}${row("Final Status",c.finalStatus)}
       ${row("Challan No",c.challanNo)}${row("Debit / PR No",c.debitNo)}
       ${row("Colour",c.followup?c.followup.color:'')}${row("Reason",c.followup?c.followup.reason:'')}${row("Remarks",c.followup?c.followup.remarks:'')}
     </table>
