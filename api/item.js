@@ -61,7 +61,7 @@ module.exports = async (req, res) => {
       purReturnId:         purReturnId,
       soldReturnDate:      d(returnDate),
       soldDate:            d(pick(sd, ['CashmemoDt', 'SoldDate', 'Sold Date'], /(cashmemo|sold).*d(t|ate)/i)),
-      cashmemoNo:          pick(s, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
+      cashmemoNo:          pick(sd, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
       supplierName:        pick(s, ['SupplierName', 'SupplierAlias', 'Supplier'], /supplier/i),
       itemMRP:             pick(s, ['ItemMRP', 'Item MRP', 'MRP', 'ItemMrp'], /\bmrp\b/i),
       salesCost:           pick(s, ['SalesCost', 'Sales Cost', 'SaleCost', 'SellingCost', 'Sales_Cost'], /sale?s?\s*cost|selling\s*cost/i)
