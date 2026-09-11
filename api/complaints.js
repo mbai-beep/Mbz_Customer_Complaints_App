@@ -57,9 +57,14 @@ async function create(req, res) {
     const code = String(c.storecode || '').trim();
 
     // server-authoritative TicketID = <storecode>-<serial>  (e.g. 1-0001)
+    // Use MAX(existing serial)+1 (not row count) so deletions never cause a
+    // reused/duplicate TicketID.
     const { rows } = await getRows(TABS.complaints);
-    const n = rows.filter(r => String(field(r, 'StoreCode')).trim() === code).length;
-    const ticketId = code + '-' + String(n + 1).padStart(4, '0');
+    const serials = rows
+      .filter(r => String(field(r, 'StoreCode')).trim() === code)
+      .map(r => { const m = String(field(r, 'TicketID')).match(/-(\d+)\s*$/); return m ? parseInt(m[1], 10) : 0; });
+    const next = (serials.length ? Math.max(...serials) : 0) + 1;
+    const ticketId = code + '-' + String(next).padStart(4, '0');
 
     // photos -> per-store Drive subfolder
     const drive = await driveClient();

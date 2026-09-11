@@ -8,7 +8,10 @@ module.exports = async (req, res) => {
   if (!b.ticketId) return res.json({ ok: false, error: 'ticketId required' });
   try {
     const { rows } = await getRows(TABS.complaints);
-    const row = rows.find(r => String(field(r, 'TicketID')).trim() === String(b.ticketId).trim());
+    // Target the LAST row with this TicketID (the newest one, which is what the
+    // history list shows first) so a legacy duplicate ID can't misdirect the write.
+    const matches = rows.filter(r => String(field(r, 'TicketID')).trim() === String(b.ticketId).trim());
+    const row = matches.length ? matches[matches.length - 1] : null;
     if (!row) return res.json({ ok: false, error: 'Ticket not found' });
     await updateComplaintFields(row._row, {
       Approver: b.approver || '', Status: b.status || 'Pending', FinalStatus: b.finalStatus || '',
