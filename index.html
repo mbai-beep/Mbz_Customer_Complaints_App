@@ -414,6 +414,7 @@ $("loginForm").addEventListener("submit",async e=>{
   btn.textContent="Sign In";btn.disabled=false;
   if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed.";return;}
   SESSION={storecode:res.storecode,storename:res.storename,role:res.role||'store',password:pwd};
+  resetForm();
   $("tbStoreName").textContent=SESSION.storename;
   $("tbStoreCode").textContent=SESSION.storecode;
   $("tbRole").textContent=SESSION.role;
@@ -451,7 +452,7 @@ $("fpSet").addEventListener("click",async ()=>{
   else $("fpErr").textContent=(res&&res.error)||"Could not set password.";
 });
 $("pwdEye").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("pwdEye").style.opacity=p.type==="text"?"1":".6";});
-$("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SESSION={storecode:null,role:'store',password:null}; currentImages=[]; $("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginForm").reset(); });
+$("logoutBtn").addEventListener("click",()=>{ if(!confirm("Logout?"))return; SESSION={storecode:null,role:'store',password:null}; currentImages=[]; resetForm(); $("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginForm").reset(); });
 
 function configureForRole(){
   const isStore=SESSION.role==='employee', isAdmin=SESSION.role==='admin';
