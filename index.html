@@ -142,9 +142,10 @@
   .rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
   .rep-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .rep-card h3{margin:0 0 8px;font-size:15px;color:var(--brand-dark)}
+  .rep-scroll{height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:10px}
   .rep-tbl{width:100%;border-collapse:collapse;font-size:13px}
   .rep-tbl th,.rep-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
-  .rep-tbl th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  .rep-tbl th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0;background:#f4f8fc;z-index:1}
   .rep-tbl td.num,.rep-tbl th.num{text-align:right;font-weight:700;width:64px}
   .rep-tbl td.pct,.rep-tbl th.pct{text-align:right;color:var(--muted);width:56px}
   @media(max-width:640px){.rep-kpis{grid-template-columns:repeat(2,1fr)}.rep-grid{grid-template-columns:1fr}}
@@ -660,11 +661,11 @@ async function renderReport(){
   });
   const groupCount=key=>{const m={};data.forEach(c=>{const v=(c[key]||'—').toString().trim()||'—';m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
   const tables=`<div class="rep-grid">
+    ${repTable('Aging — Pending only (days)',Object.entries(buckets))}
     ${repTable('By Store Code',groupCount('storecode'))}
     ${repTable('By Category',groupCount('categoryShortName'))}
     ${repTable('By Final Status',groupCount('finalStatus').map(([k,v])=>[k==='—'?'Not Set':k,v]))}
     ${repTable('By Complaint Reason',groupCount('complaintReason'),10)}
-    ${repTable('Aging — Pending only (days)',Object.entries(buckets))}
   </div>`;
   body.innerHTML=kpis+tables;
 }
@@ -674,7 +675,7 @@ function repTable(title,rows,limit){
   const tot=rows.reduce((s,x)=>s+x[1],0)||1;
   const head=title.split('—')[0].replace(/^By /,'').trim();
   const b=r.length?r.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td><td class="pct">${Math.round(v*100/tot)}%</td></tr>`).join(''):`<tr><td colspan="3" class="help">No data</td></tr>`;
-  return `<div class="rep-card"><h3>${esc(title)}</h3><table class="rep-tbl"><thead><tr><th>${esc(head)}</th><th class="num">Count</th><th class="pct">%</th></tr></thead><tbody>${b}</tbody></table></div>`;
+  return `<div class="rep-card"><h3>${esc(title)}</h3><div class="rep-scroll"><table class="rep-tbl"><thead><tr><th>${esc(head)}</th><th class="num">Count</th><th class="pct">%</th></tr></thead><tbody>${b}</tbody></table></div></div>`;
 }
 
 /* SECTION 3 · ADMIN */
