@@ -134,11 +134,11 @@
   .req:after{content:" *";color:var(--danger)}
   .help{font-size:11px;color:var(--muted);margin-top:4px}
   /* Report */
-  .rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  .rep-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:14px 0}
   .rep-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 14px;text-align:center}
   .rep-kpi .v{font-size:30px;font-weight:800;line-height:1;color:var(--brand-dark)}
   .rep-kpi .l{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:6px}
-  .rep-kpi.k-pending .v{color:#c9871a}.rep-kpi.k-approved .v{color:#2e9e6b}.rep-kpi.k-rejected .v{color:#c0453b}
+  .rep-kpi.k-repair .v{color:#2f6f9f}.rep-kpi.k-return .v{color:#c9871a}.rep-kpi.k-zero .v{color:#6b7785}.rep-kpi.k-debit .v{color:#c0453b}
   .rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
   .rep-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .rep-card h3{margin:0 0 8px;font-size:15px;color:var(--brand-dark)}
@@ -363,7 +363,7 @@
           <select id="repPeriod" onchange="renderReport()">
             <option value="MTD">MTD — Month to date</option>
             <option value="QTD">QTD — Quarter to date</option>
-            <option value="YTD">YTD — Year to date</option>
+            <option value="YTD">YTD — Financial year (from 1 Apr)</option>
             <option value="ALL">All time</option>
           </select>
         </div>
@@ -629,7 +629,8 @@ function repPeriodStart(period){
   const now=new Date(), y=now.getFullYear();
   if(period==='MTD') return new Date(y, now.getMonth(), 1);
   if(period==='QTD') return new Date(y, Math.floor(now.getMonth()/3)*3, 1);
-  if(period==='YTD') return new Date(y, 0, 1);
+  // YTD = financial year to date, starting 1 Apr (FY starts in April)
+  if(period==='YTD') return new Date(now.getMonth()>=3 ? y : y-1, 3, 1);
   return null; // ALL
 }
 function ymd(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
@@ -644,11 +645,13 @@ async function renderReport(){
   const data=(STORE.complaints||[]).filter(c=>{ if(!startS) return true; const cd=cDate(c); return cd && cd>=startS && cd<=todayS; });
   if(!data.length){body.innerHTML=`<div class="empty">No complaints in this period.</div>`;return;}
   const norm=s=>{const r=String(s||'Pending').toLowerCase();return r==='approved'?'Approved':r==='rejected'?'Rejected':'Pending';};
+  const fsNorm=s=>{const r=String(s||'').trim().toLowerCase();return r==='repair'?'Repair':r==='return'?'Return':r==='zero'?'Zero':r==='debit'?'Debit':'';};
   const total=data.length,
-        pending=data.filter(c=>norm(c.status)==='Pending').length,
-        approved=data.filter(c=>norm(c.status)==='Approved').length,
-        rejected=data.filter(c=>norm(c.status)==='Rejected').length;
-  const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}${repKpi('Pending',pending,'k-pending')}${repKpi('Approved',approved,'k-approved')}${repKpi('Rejected',rejected,'k-rejected')}</div>`;
+        repair=data.filter(c=>fsNorm(c.finalStatus)==='Repair').length,
+        ret=data.filter(c=>fsNorm(c.finalStatus)==='Return').length,
+        zero=data.filter(c=>fsNorm(c.finalStatus)==='Zero').length,
+        debit=data.filter(c=>fsNorm(c.finalStatus)==='Debit').length;
+  const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}${repKpi('Repair',repair,'k-repair')}${repKpi('Return',ret,'k-return')}${repKpi('Zero',zero,'k-zero')}${repKpi('Debit',debit,'k-debit')}</div>`;
   // Aging — Pending only
   const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(todayS);
   data.filter(c=>norm(c.status)==='Pending').forEach(c=>{
@@ -659,7 +662,7 @@ async function renderReport(){
   const tables=`<div class="rep-grid">
     ${repTable('By Store Code',groupCount('storecode'))}
     ${repTable('By Category',groupCount('categoryShortName'))}
-    ${repTable('By Status',[['Pending',pending],['Approved',approved],['Rejected',rejected]].filter(r=>r[1]))}
+    ${repTable('By Final Status',groupCount('finalStatus').map(([k,v])=>[k==='—'?'Not Set':k,v]))}
     ${repTable('By Complaint Reason',groupCount('complaintReason'),10)}
     ${repTable('Aging — Pending only (days)',Object.entries(buckets))}
   </div>`;
