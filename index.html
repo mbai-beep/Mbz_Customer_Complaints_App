@@ -133,6 +133,21 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .req:after{content:" *";color:var(--danger)}
   .help{font-size:11px;color:var(--muted);margin-top:4px}
+  /* Report */
+  .rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  .rep-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 14px;text-align:center}
+  .rep-kpi .v{font-size:30px;font-weight:800;line-height:1;color:var(--brand-dark)}
+  .rep-kpi .l{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:6px}
+  .rep-kpi.k-pending .v{color:#c9871a}.rep-kpi.k-approved .v{color:#2e9e6b}.rep-kpi.k-rejected .v{color:#c0453b}
+  .rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .rep-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .rep-card h3{margin:0 0 8px;font-size:15px;color:var(--brand-dark)}
+  .rep-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .rep-tbl th,.rep-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .rep-tbl th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  .rep-tbl td.num,.rep-tbl th.num{text-align:right;font-weight:700;width:64px}
+  .rep-tbl td.pct,.rep-tbl th.pct{text-align:right;color:var(--muted);width:56px}
+  @media(max-width:640px){.rep-kpis{grid-template-columns:repeat(2,1fr)}.rep-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -230,6 +245,7 @@
   <div class="tabs">
     <button id="tabBtn1" onclick="showTab(1)">New Complaint</button>
     <button id="tabBtn2" onclick="showTab(2)">All Complaints History</button>
+    <button id="tabBtn4" onclick="showTab(4)">Report</button>
     <button id="tabBtn3" class="hidden" onclick="showTab(3)">Admin</button>
   </div>
 
@@ -275,6 +291,8 @@
           <div class="field readonly"><label>Supplier Name <span class="ro-badge">auto</span></label><input id="supplierName" readonly></div>
           <div class="field readonly"><label>Item MRP <span class="ro-badge">auto</span></label><input id="itemMRP" readonly></div>
           <div class="field readonly"><label>Sales Cost <span class="ro-badge">auto</span></label><input id="salesCost" readonly></div>
+          <div class="field readonly"><label>Customer Name <span class="ro-badge">auto</span></label><input id="customerName" readonly></div>
+          <div class="field readonly"><label>Customer Mobile Number <span class="ro-badge">auto</span></label><input id="customerMobileNumber" readonly></div>
           <div class="field full"><label class="req">Complaint Reason <span class="man-badge">manual</span></label><textarea id="complaintReason" rows="2" placeholder="Describe the complaint reason" required></textarea></div>
           <div class="field full">
             <label>Complaint Images <span class="man-badge">camera / gallery · max 4</span></label>
@@ -330,6 +348,29 @@
       <div style="overflow:auto"><table class="utable" id="userTable"><tbody></tbody></table></div>
       <div class="help">Only accounts created/edited by Admin appear here. Store codes not listed still log in with the default MBZ+code password.</div>
     </div>
+  </div>
+
+  <!-- SECTION 4 · REPORT -->
+  <div class="page hidden" id="tab4">
+    <div class="card" style="padding:14px 16px">
+      <span class="section-tag">SECTION · REPORT</span>
+      <h2 id="repTitle">Complaints Summary</h2>
+      <p class="desc" id="repDesc">Summary of complaints by store, category, status, reason and aging.</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-row" style="align-items:end">
+        <div><label>Period</label>
+          <select id="repPeriod" onchange="renderReport()">
+            <option value="MTD">MTD — Month to date</option>
+            <option value="QTD">QTD — Quarter to date</option>
+            <option value="YTD">YTD — Year to date</option>
+            <option value="ALL">All time</option>
+          </select>
+        </div>
+        <div id="repRange" class="help" style="align-self:center"></div>
+      </div>
+    </div>
+    <div id="reportBody"></div>
   </div>
 </div>
 
@@ -470,11 +511,14 @@ function showTab(n){
   $("tab1").classList.toggle("hidden",n!==1);
   $("tab2").classList.toggle("hidden",n!==2);
   $("tab3").classList.toggle("hidden",n!==3);
+  $("tab4").classList.toggle("hidden",n!==4);
   $("tabBtn1").classList.toggle("active",n===1);
   $("tabBtn2").classList.toggle("active",n===2);
   $("tabBtn3").classList.toggle("active",n===3);
+  $("tabBtn4").classList.toggle("active",n===4);
   if(n===2) renderHistory();
   if(n===3) loadUsers();
+  if(n===4) renderReport();
 }
 
 /* SECTION 1 */
@@ -489,11 +533,12 @@ async function fetchItem(){
   $("articleNo").value=d.articleNo||"";$("colorName").value=d.colorName||"";$("contrast").value=d.contrast||"";$("size").value=d.size||"";$("departmentShortName").value=d.departmentShortName||"";$("categoryShortName").value=d.categoryShortName||"";
   $("soldDate").value=d.soldDate||"";$("soldReturnDate").value=d.soldReturnDate||"";$("purReturnId").value=d.purReturnId||"";$("purchasedDate").value=d.purchasedDate||"";
   $("cashmemoNo").value=d.cashmemoNo||"";$("supplierName").value=d.supplierName||"";$("itemMRP").value=d.itemMRP||"";$("salesCost").value=d.salesCost||"";
+  $("customerName").value=d.customerName||"";$("customerMobileNumber").value=d.customerMobileNumber||"";
   $("apArticle").textContent=d.articleNo||"—";$("apColor").textContent=d.colorName||"—";$("apContrast").textContent=d.contrast||"—";$("apSize").textContent=d.size||"—";
   $("apImg").src=driveThumb(d.imageUrl)||"";$("articlePreview").style.display=d.imageUrl?"block":"none";$("articlePreview")._url=d.imageUrl||"";
   toast("Details fetched.");
 }
-function clearItemFields(){["articleNo","colorName","contrast","size","departmentShortName","categoryShortName","soldDate","soldReturnDate","purReturnId","purchasedDate","cashmemoNo","supplierName","itemMRP","salesCost"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
+function clearItemFields(){["articleNo","colorName","contrast","size","departmentShortName","categoryShortName","soldDate","soldReturnDate","purReturnId","purchasedDate","cashmemoNo","supplierName","itemMRP","salesCost","customerName","customerMobileNumber"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
 
 function compressImage(file,maxDim=1280,q=0.7){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>h){if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}}else{if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);resolve(cv.toDataURL('image/jpeg',q));};img.onerror=reject;img.src=fr.result;};fr.onerror=reject;fr.readAsDataURL(file);});}
 function renderImgGrid(){
@@ -518,7 +563,7 @@ $("complaintForm").addEventListener("submit",async e=>{
   if(res&&res.ok){toast("Complaint "+(res.ticketId||payload.ticketId)+" submitted.");resetForm();await newTicket();}
   else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
-function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
+function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,customerName:$("customerName").value,customerMobileNumber:$("customerMobileNumber").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
 function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
 $("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("searchInput").value="";renderHistory(); });
 $("resetBtn").addEventListener("click",resetForm);
@@ -579,6 +624,56 @@ async function deleteComplaint(tid){
   if(res&&res.ok){toast("Deleted "+tid);renderHistory();}else toast("Delete failed: "+((res&&res.error)||""));
 }
 
+/* SECTION 4 · REPORT */
+function repPeriodStart(period){
+  const now=new Date(), y=now.getFullYear();
+  if(period==='MTD') return new Date(y, now.getMonth(), 1);
+  if(period==='QTD') return new Date(y, Math.floor(now.getMonth()/3)*3, 1);
+  if(period==='YTD') return new Date(y, 0, 1);
+  return null; // ALL
+}
+function ymd(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+async function renderReport(){
+  const body=$("reportBody");
+  const all=SESSION.role!=='employee';
+  STORE.complaints=await API.listComplaints(SESSION.storecode,all);
+  const period=$("repPeriod").value||'MTD';
+  const start=repPeriodStart(period), startS=start?ymd(start):null, todayS=ymd(new Date());
+  $("repRange").textContent = start ? (startS+" → "+todayS) : "All time";
+  $("repTitle").textContent = (SESSION.role==='employee'?'My Complaints Summary':'Complaints Summary (all stores)');
+  const data=(STORE.complaints||[]).filter(c=>{ if(!startS) return true; const cd=cDate(c); return cd && cd>=startS && cd<=todayS; });
+  if(!data.length){body.innerHTML=`<div class="empty">No complaints in this period.</div>`;return;}
+  const norm=s=>{const r=String(s||'Pending').toLowerCase();return r==='approved'?'Approved':r==='rejected'?'Rejected':'Pending';};
+  const total=data.length,
+        pending=data.filter(c=>norm(c.status)==='Pending').length,
+        approved=data.filter(c=>norm(c.status)==='Approved').length,
+        rejected=data.filter(c=>norm(c.status)==='Rejected').length;
+  const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}${repKpi('Pending',pending,'k-pending')}${repKpi('Approved',approved,'k-approved')}${repKpi('Rejected',rejected,'k-rejected')}</div>`;
+  // Aging — Pending only
+  const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(todayS);
+  data.filter(c=>norm(c.status)==='Pending').forEach(c=>{
+    const cd=cDate(c); if(!cd) return; const days=Math.floor((nowT-new Date(cd))/86400000);
+    if(days<=7)buckets['0–7']++;else if(days<=15)buckets['8–15']++;else if(days<=30)buckets['16–30']++;else buckets['30+']++;
+  });
+  const groupCount=key=>{const m={};data.forEach(c=>{const v=(c[key]||'—').toString().trim()||'—';m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+  const tables=`<div class="rep-grid">
+    ${repTable('By Store Code',groupCount('storecode'))}
+    ${repTable('By Category',groupCount('categoryShortName'))}
+    ${repTable('By Status',[['Pending',pending],['Approved',approved],['Rejected',rejected]].filter(r=>r[1]))}
+    ${repTable('By Complaint Reason',groupCount('complaintReason'),10)}
+    ${repTable('Aging — Pending only (days)',Object.entries(buckets))}
+  </div>`;
+  body.innerHTML=kpis+tables;
+}
+function repKpi(label,val,cls){return `<div class="rep-kpi ${cls}"><div class="v">${val}</div><div class="l">${label}</div></div>`;}
+function repTable(title,rows,limit){
+  let r=rows.slice(); if(limit&&r.length>limit)r=r.slice(0,limit);
+  const tot=rows.reduce((s,x)=>s+x[1],0)||1;
+  const head=title.split('—')[0].replace(/^By /,'').trim();
+  const b=r.length?r.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td><td class="pct">${Math.round(v*100/tot)}%</td></tr>`).join(''):`<tr><td colspan="3" class="help">No data</td></tr>`;
+  return `<div class="rep-card"><h3>${esc(title)}</h3><table class="rep-tbl"><thead><tr><th>${esc(head)}</th><th class="num">Count</th><th class="pct">%</th></tr></thead><tbody>${b}</tbody></table></div>`;
+}
+
 /* SECTION 3 · ADMIN */
 async function loadUsers(){
   const res=await API.admin('listUsers');
@@ -627,6 +722,7 @@ function printComplaint(c){
       ${row("Department",c.departmentShortName)}${row("Category",c.categoryShortName)}
       ${row("Purchased Date",c.purchasedDate)}${row("Pur Return Id",c.purReturnId)}${row("Purchase Return Date",c.soldReturnDate)}${row("Sold Date",c.soldDate)}
       ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
+      ${row("Customer Name",c.customerName)}${row("Customer Mobile Number",c.customerMobileNumber)}
       ${row("Complaint Reason",c.complaintReason)}
     </table>
     <h3>Follow-up / Manager Review</h3>

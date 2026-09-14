@@ -64,7 +64,9 @@ module.exports = async (req, res) => {
       cashmemoNo:          pick(sd, ['CashmemoNo', 'Cashmemo No', 'CashMemoNo'], /cashmemo.*n(o|umber)/i),
       supplierName:        pick(s, ['SupplierName', 'SupplierAlias', 'Supplier'], /supplier/i),
       itemMRP:             pick(s, ['ItemMRP', 'Item MRP', 'MRP', 'ItemMrp'], /\bmrp\b/i),
-      salesCost:           pick(s, ['SalesCost', 'Sales Cost', 'SaleCost', 'SellingCost', 'Sales_Cost'], /sale?s?\s*cost|selling\s*cost/i)
+      salesCost:           pick(s, ['SalesCost', 'Sales Cost', 'SaleCost', 'SellingCost', 'Sales_Cost'], /sale?s?\s*cost|selling\s*cost/i),
+      customerName:        pick(s, ['CustomerName', 'Customer Name', 'CustName', 'CustomerFullName'], /customer.*name|cust.*name/i),
+      customerMobileNumber: pick(s, ['CustomerMobileNumber', 'Customer Mobile Number', 'CustomerMobile', 'CustomerMobileNo', 'MobileNumber', 'CustomerContactNo', 'ContactNo'], /customer.*mobile|mobile.*(no|number)|contact.*(no|number)/i)
     };
     const nothing = !out.articleNo && !out.soldDate && !out.cashmemoNo && !out.colorName && !out.size && !out.purchasedDate && !out.soldReturnDate && !out.purReturnId;
     if (nothing) return res.json(null);

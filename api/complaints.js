@@ -87,7 +87,8 @@ async function create(req, res) {
       c.complaintReason || '', c.approver || '', c.remarks || '', c.challanNo || '', c.debitNo || '',
       c.status || 'Pending', links[0], links[1], links[2], links[3], '', '', '', istNow(),
       c.departmentShortName || '', c.categoryShortName || '', c.purReturnId || '',
-      c.itemMRP || '', c.salesCost || '', ''
+      c.itemMRP || '', c.salesCost || '', '',
+      c.customerName || '', c.customerMobileNumber || ''
     ];
     if (row.length !== COMPLAINT_HEADERS.length) throw new Error('Row/column count mismatch');
     await appendComplaint(row.map(v => (v == null ? '' : (typeof v === 'object' ? '' : String(v)))));
@@ -119,6 +120,7 @@ async function list(req, res) {
         departmentShortName: field(r, 'DepartmentShortName'), categoryShortName: field(r, 'CategoryShortName'),
         purReturnId: field(r, 'PurReturnId'),
         itemMRP: field(r, 'ItemMRP'), salesCost: field(r, 'SalesCost'), finalStatus: field(r, 'FinalStatus'),
+        customerName: field(r, 'CustomerName'), customerMobileNumber: field(r, 'CustomerMobileNumber'),
         createdAt: field(r, 'CreatedAt'),
         images,
         followup: (fc || fr || fm) ? { color: fc, reason: fr, remarks: fm } : null
