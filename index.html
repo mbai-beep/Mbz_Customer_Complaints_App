@@ -122,6 +122,7 @@
   .complaint .kv b{color:var(--text);font-weight:600}
   .complaint .foot{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .complaint .foot .btn{width:auto;padding:9px 14px;font-size:13px;flex:0 0 auto}
+  .cs-select{padding:9px 12px;font-size:13px;border:1px solid var(--line);border-radius:10px;background:#f6fafd;color:var(--brand-dark);font-weight:600;flex:0 0 auto}
   .followup-box{background:#eef4fa;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px}
   .followup-box b{color:var(--brand-dark)}
   .empty{text-align:center;color:var(--muted);padding:50px 20px}
@@ -387,7 +388,6 @@
     <input type="hidden" id="fuTicket">
     <div class="field"><label class="req">Approval Manager</label><select id="fuApprover"><option value="">— Select manager —</option><option>Chetna</option><option>Sunder</option><option>Prapti</option><option>Vinita</option></select></div>
     <div class="field"><label class="req">Status</label><select id="fuStatus"><option value="">— Select —</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
-    <div class="field"><label>Complaint Status <span class="man-badge">optional</span></label><select id="fuComplaintStatus"><option value="">— Select —</option><option>GRANTED</option><option>WIP</option><option>CLOSED</option></select></div>
     <div class="field"><label class="req">Final Status</label><select id="fuFinal"><option value="">— Select —</option><option>Repair</option><option>Return</option><option>Zero</option><option>Debit</option></select></div>
     <div class="field"><label>Colour Name <span class="man-badge">optional</span></label><input id="fuColor" placeholder="Colour name"></div>
     <div class="field"><label>Reason <span class="man-badge">optional</span></label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
@@ -609,6 +609,12 @@ async function renderHistory(){
       <div class="body">${img?`<img src="${img}" referrerpolicy="no-referrer">`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
       ${fu}
       <div class="foot">
+        ${canReview?`<select class="cs-select" onchange='saveComplaintStatus(${JSON.stringify(c.ticketId)},this.value)'>
+          <option value="">Complaint Status…</option>
+          <option ${c.complaintStatus==='GRANTED'?'selected':''}>GRANTED</option>
+          <option ${c.complaintStatus==='WIP'?'selected':''}>WIP</option>
+          <option ${c.complaintStatus==='CLOSED'?'selected':''}>CLOSED</option>
+        </select>`:""}
         ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
         <button class="btn secondary" onclick='printById(${JSON.stringify(c.ticketId)})'>Print</button>
         ${isAdmin?`<button class="btn danger" onclick='deleteComplaint(${JSON.stringify(c.ticketId)})'>Delete</button>`:""}
@@ -616,15 +622,19 @@ async function renderHistory(){
     </div>`;
   }).join("");
 }
-function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuComplaintStatus").value=c.complaintStatus||"";$("fuFinal").value=c.finalStatus||"";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
+function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuFinal").value=c.finalStatus||"";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
 function closeFollowup(){$("followupModal").classList.add("hidden");}
 async function saveFollowup(){
   const tid=$("fuTicket").value;
   const required=[["fuApprover","Approval Manager"],["fuStatus","Status"],["fuFinal","Final Status"]];
   for(const [id,label] of required){ if(!$(id).value.trim()){ toast("Please fill: "+label); $(id).focus(); return; } }
-  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,complaintStatus:$("fuComplaintStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
+  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
   const res=await API.saveFollowup(payload);
   if(res&&res.ok){closeFollowup();renderHistory();toast("Review saved.");}else toast("Save failed: "+((res&&res.error)||""));
+}
+async function saveComplaintStatus(tid,val){
+  const res=await API.saveFollowup({ticketId:tid,complaintStatus:val});
+  if(res&&res.ok){toast("Complaint status "+(val||"cleared")+".");renderHistory();}else toast("Update failed: "+((res&&res.error)||""));
 }
 function printById(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(c)printComplaint(c);}
 async function deleteComplaint(tid){
