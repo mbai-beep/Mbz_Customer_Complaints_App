@@ -588,6 +588,13 @@ function cDate(c){
   const d=new Date(s); if(!isNaN(d)) return d.toISOString().slice(0,10);
   return "";
 }
+/* timestamp (ms) for sorting latest→oldest; prefers CreatedAt (DD-MM-YYYY HH:MM:SS) */
+function cTime(c){
+  let m=String(c.createdAt||"").match(/(\d{2})-(\d{2})-(\d{4})[ T]+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0)).getTime();
+  const t=new Date(String(c.ticketDate||"")); if(!isNaN(t)) return t.getTime();
+  const cd=cDate(c); const dd=cd?new Date(cd):null; return (dd&&!isNaN(dd))?dd.getTime():0;
+}
 let HIST_LIMIT=10;
 function histFilter(){ HIST_LIMIT=10; renderHistory(true); }
 function viewMoreHistory(){ HIST_LIMIT+=10; renderHistory(false); }
@@ -605,6 +612,7 @@ async function renderHistory(refetch=true){
     return true;
   });
   if(!data.length){list.innerHTML=`<div class="empty">No complaints found.</div>`;return;}
+  data.sort((a,b)=>cTime(b)-cTime(a));   // latest → oldest by ticket date/time
   const isAdmin=SESSION.role==='admin', canReview=(SESSION.role==='manager'||SESSION.role==='admin');
   const shown=data.slice(0,HIST_LIMIT);
   list.innerHTML=shown.map(c=>{
