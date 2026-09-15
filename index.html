@@ -672,15 +672,15 @@ async function renderReport(){
         zero=data.filter(c=>fsNorm(c.finalStatus)==='Zero').length,
         debit=data.filter(c=>fsNorm(c.finalStatus)==='Debit').length;
   const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}${repKpi('Repair',repair,'k-repair')}${repKpi('Return',ret,'k-return')}${repKpi('Zero',zero,'k-zero')}${repKpi('Debit',debit,'k-debit')}</div>`;
-  // Aging — Pending only
+  // Aging — Complaint Status not Closed (includes GRANTED, WIP and unset)
   const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(todayS);
-  data.filter(c=>norm(c.status)==='Pending').forEach(c=>{
+  data.filter(c=>String(c.complaintStatus||'').trim().toUpperCase()!=='CLOSED').forEach(c=>{
     const cd=cDate(c); if(!cd) return; const days=Math.floor((nowT-new Date(cd))/86400000);
     if(days<=7)buckets['0–7']++;else if(days<=15)buckets['8–15']++;else if(days<=30)buckets['16–30']++;else buckets['30+']++;
   });
   const groupCount=key=>{const m={};data.forEach(c=>{const v=(c[key]||'—').toString().trim()||'—';m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
   const tables=`<div class="rep-grid">
-    ${repTable('Aging — Pending only (days)',Object.entries(buckets))}
+    ${repTable('Aging — Complaint Status (not Closed) (days)',Object.entries(buckets))}
     ${repTable('By Store Code',groupCount('storecode'))}
     ${repTable('By Category',groupCount('categoryShortName'))}
     ${repTable('By Final Status',groupCount('finalStatus').map(([k,v])=>[k==='—'?'Not Set':k,v]))}
