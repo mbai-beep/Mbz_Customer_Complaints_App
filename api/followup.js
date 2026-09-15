@@ -24,6 +24,7 @@ module.exports = async (req, res) => {
       Approver: b.approver || '', Status: b.status || 'Pending', FinalStatus: b.finalStatus || '',
       ChallanNo: b.challanNo || '', DebitNo: b.debitNo || '',
       FollowupColor: b.color || '', FollowupReason: b.reason || '', FollowupRemarks: b.remarks || '',
+      ComplaintStatus: b.complaintStatus || '',
       ReviewedAt: istNow()
     });
     res.json({ ok: true });
