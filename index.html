@@ -122,7 +122,8 @@
   .complaint .kv b{color:var(--text);font-weight:600}
   .complaint .foot{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .complaint .foot .btn{width:auto;padding:9px 14px;font-size:13px;flex:0 0 auto}
-  .cs-select{padding:9px 12px;font-size:13px;border:1px solid var(--line);border-radius:10px;background:#f6fafd;color:var(--brand-dark);font-weight:600;flex:0 0 auto}
+  .cs-select{padding:9px 14px;font-size:13px;border:none;border-radius:11px;background:linear-gradient(160deg,var(--btn-grad1),var(--btn-grad2));color:#fff;font-weight:700;flex:0 0 auto}
+  .cs-select option{color:#222;background:#fff}
   .followup-box{background:#eef4fa;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px}
   .followup-box b{color:var(--brand-dark)}
   .empty{text-align:center;color:var(--muted);padding:50px 20px}
@@ -609,13 +610,13 @@ async function renderHistory(){
       <div class="body">${img?`<img src="${img}" referrerpolicy="no-referrer">`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
       ${fu}
       <div class="foot">
+        ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
         ${canReview?`<select class="cs-select" onchange='saveComplaintStatus(${JSON.stringify(c.ticketId)},this.value)'>
           <option value="">Complaint Status…</option>
           <option ${c.complaintStatus==='GRANTED'?'selected':''}>GRANTED</option>
           <option ${c.complaintStatus==='WIP'?'selected':''}>WIP</option>
           <option ${c.complaintStatus==='CLOSED'?'selected':''}>CLOSED</option>
         </select>`:""}
-        ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
         <button class="btn secondary" onclick='printById(${JSON.stringify(c.ticketId)})'>Print</button>
         ${isAdmin?`<button class="btn danger" onclick='deleteComplaint(${JSON.stringify(c.ticketId)})'>Delete</button>`:""}
       </div>
