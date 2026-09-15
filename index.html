@@ -383,11 +383,11 @@
     <div class="field"><label class="req">Approval Manager</label><select id="fuApprover"><option value="">— Select manager —</option><option>Chetna</option><option>Sunder</option><option>Prapti</option><option>Vinita</option></select></div>
     <div class="field"><label class="req">Status</label><select id="fuStatus"><option value="">— Select —</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
     <div class="field"><label class="req">Final Status</label><select id="fuFinal"><option value="">— Select —</option><option>Repair</option><option>Return</option><option>Zero</option><option>Debit</option></select></div>
-    <div class="field"><label class="req">Colour Name</label><input id="fuColor" placeholder="Colour name"></div>
-    <div class="field"><label class="req">Reason</label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
+    <div class="field"><label>Colour Name <span class="man-badge">optional</span></label><input id="fuColor" placeholder="Colour name"></div>
+    <div class="field"><label>Reason <span class="man-badge">optional</span></label><textarea id="fuReason" rows="2" placeholder="Reason"></textarea></div>
     <div class="field"><label>Remarks <span class="man-badge">optional</span></label><textarea id="fuRemarks" rows="2" placeholder="Remarks"></textarea></div>
-    <div class="field"><label class="req">Challan No</label><input id="fuChallan" placeholder="Challan number"></div>
-    <div class="field"><label class="req">Debit No / Purchase Return No</label><input id="fuDebit" placeholder="Debit / PR number"></div>
+    <div class="field"><label>Challan No <span class="man-badge">optional</span></label><input id="fuChallan" placeholder="Challan number"></div>
+    <div class="field"><label>Debit No / Purchase Return No <span class="man-badge">optional</span></label><input id="fuDebit" placeholder="Debit / PR number"></div>
     <div class="row-actions">
       <button class="btn secondary" onclick="closeFollowup()">Cancel</button>
       <button class="btn" onclick="saveFollowup()">Save Review</button>
@@ -614,7 +614,7 @@ function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if
 function closeFollowup(){$("followupModal").classList.add("hidden");}
 async function saveFollowup(){
   const tid=$("fuTicket").value;
-  const required=[["fuApprover","Approval Manager"],["fuStatus","Status"],["fuFinal","Final Status"],["fuColor","Colour Name"],["fuReason","Reason"],["fuChallan","Challan No"],["fuDebit","Debit No / Purchase Return No"]];
+  const required=[["fuApprover","Approval Manager"],["fuStatus","Status"],["fuFinal","Final Status"]];
   for(const [id,label] of required){ if(!$(id).value.trim()){ toast("Please fill: "+label); $(id).focus(); return; } }
   const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
   const res=await API.saveFollowup(payload);
@@ -668,6 +668,7 @@ async function renderReport(){
     ${repTable('By Category',groupCount('categoryShortName'))}
     ${repTable('By Final Status',groupCount('finalStatus').map(([k,v])=>[k==='—'?'Not Set':k,v]))}
     ${repTable('By Complaint Reason',groupCount('complaintReason'),10)}
+    ${repTable('By Suppliers',groupCount('supplierName'))}
   </div>`;
   body.innerHTML=kpis+tables;
 }
