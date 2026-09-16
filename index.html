@@ -373,7 +373,10 @@
       <div class="filter-row" style="align-items:end">
         <div><label>Period</label>
           <select id="repPeriod" onchange="renderReport()">
-            <option value="MTD">MTD — Month to date</option>
+            <option value="TODAY">Today</option>
+            <option value="YESTERDAY">Yesterday</option>
+            <option value="LAST7">Last 7 days</option>
+            <option value="MTD" selected>MTD — Month to date</option>
             <option value="QTD">QTD — Quarter to date</option>
             <option value="YTD">YTD — Financial year (from 1 Apr)</option>
             <option value="ALL">All time</option>
@@ -672,13 +675,18 @@ async function deleteComplaint(tid){
 }
 
 /* SECTION 4 · REPORT */
-function repPeriodStart(period){
+function repPeriodRange(period){
   const now=new Date(), y=now.getFullYear();
-  if(period==='MTD') return new Date(y, now.getMonth(), 1);
-  if(period==='QTD') return new Date(y, Math.floor(now.getMonth()/3)*3, 1);
+  const today=new Date(y, now.getMonth(), now.getDate());
+  const daysAgo=n=>{const d=new Date(today); d.setDate(d.getDate()-n); return d;};
+  if(period==='TODAY') return {s:today, e:today};
+  if(period==='YESTERDAY') return {s:daysAgo(1), e:daysAgo(1)};
+  if(period==='LAST7') return {s:daysAgo(6), e:today};
+  if(period==='MTD') return {s:new Date(y, now.getMonth(), 1), e:today};
+  if(period==='QTD') return {s:new Date(y, Math.floor(now.getMonth()/3)*3, 1), e:today};
   // YTD = financial year to date, starting 1 Apr (FY starts in April)
-  if(period==='YTD') return new Date(now.getMonth()>=3 ? y : y-1, 3, 1);
-  return null; // ALL
+  if(period==='YTD') return {s:new Date(now.getMonth()>=3 ? y : y-1, 3, 1), e:today};
+  return {s:null, e:today}; // ALL
 }
 function ymd(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
 async function renderReport(){
@@ -686,10 +694,10 @@ async function renderReport(){
   const all=SESSION.role!=='employee';
   STORE.complaints=await API.listComplaints(SESSION.storecode,all);
   const period=$("repPeriod").value||'MTD';
-  const start=repPeriodStart(period), startS=start?ymd(start):null, todayS=ymd(new Date());
-  $("repRange").textContent = start ? (startS+" → "+todayS) : "All time";
+  const rng=repPeriodRange(period), startS=rng.s?ymd(rng.s):null, endS=ymd(rng.e||new Date());
+  $("repRange").textContent = startS ? (startS===endS ? startS : startS+" → "+endS) : "All time";
   $("repTitle").textContent = (SESSION.role==='employee'?'My Complaints Summary':'Complaints Summary (all stores)');
-  const data=(STORE.complaints||[]).filter(c=>{ if(!startS) return true; const cd=cDate(c); return cd && cd>=startS && cd<=todayS; });
+  const data=(STORE.complaints||[]).filter(c=>{ if(!startS) return true; const cd=cDate(c); return cd && cd>=startS && cd<=endS; });
   if(!data.length){body.innerHTML=`<div class="empty">No complaints in this period.</div>`;return;}
   const norm=s=>{const r=String(s||'Pending').toLowerCase();return r==='approved'?'Approved':r==='rejected'?'Rejected':'Pending';};
   const fsNorm=s=>{const r=String(s||'').trim().toLowerCase();return r==='repair'?'Repair':r==='return'?'Return':r==='zero'?'Zero':r==='debit'?'Debit':'';};
@@ -706,7 +714,7 @@ async function renderReport(){
     +`${repKpi('Granted',granted,'k-granted')}${repKpi('WIP',wip,'k-wip')}${repKpi('Closed',closed,'k-closed')}`
     +`${repKpi('Repair',repair,'k-repair')}${repKpi('Return',ret,'k-return')}${repKpi('Zero',zero,'k-zero')}${repKpi('Debit',debit,'k-debit')}</div>`;
   // Aging — Complaint Status not Closed (includes GRANTED, WIP and unset)
-  const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(todayS);
+  const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(ymd(new Date()));
   data.filter(c=>String(c.complaintStatus||'').trim().toUpperCase()!=='CLOSED').forEach(c=>{
     const cd=cDate(c); if(!cd) return; const days=Math.floor((nowT-new Date(cd))/86400000);
     if(days<=7)buckets['0–7']++;else if(days<=15)buckets['8–15']++;else if(days<=30)buckets['16–30']++;else buckets['30+']++;
