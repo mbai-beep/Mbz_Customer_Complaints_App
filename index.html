@@ -148,6 +148,7 @@
   .rep-kpi .v{font-size:30px;font-weight:800;line-height:1;color:var(--brand-dark)}
   .rep-kpi .l{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:6px}
   .rep-kpi.k-repair .v{color:#2f6f9f}.rep-kpi.k-return .v{color:#c9871a}.rep-kpi.k-zero .v{color:#6b7785}.rep-kpi.k-debit .v{color:#c0453b}
+  .rep-kpi.k-granted .v{color:#2e9e6b}.rep-kpi.k-wip .v{color:#3a54c4}.rep-kpi.k-closed .v{color:#4a5760}
   .rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
   .rep-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .rep-card h3{margin:0 0 8px;font-size:15px;color:var(--brand-dark)}
@@ -692,12 +693,18 @@ async function renderReport(){
   if(!data.length){body.innerHTML=`<div class="empty">No complaints in this period.</div>`;return;}
   const norm=s=>{const r=String(s||'Pending').toLowerCase();return r==='approved'?'Approved':r==='rejected'?'Rejected':'Pending';};
   const fsNorm=s=>{const r=String(s||'').trim().toLowerCase();return r==='repair'?'Repair':r==='return'?'Return':r==='zero'?'Zero':r==='debit'?'Debit':'';};
+  const csNorm=s=>{const r=String(s||'').trim().toUpperCase();return (r==='GRANTED'||r==='WIP'||r==='CLOSED')?r:'';};
   const total=data.length,
+        granted=data.filter(c=>csNorm(c.complaintStatus)==='GRANTED').length,
+        wip=data.filter(c=>csNorm(c.complaintStatus)==='WIP').length,
+        closed=data.filter(c=>csNorm(c.complaintStatus)==='CLOSED').length,
         repair=data.filter(c=>fsNorm(c.finalStatus)==='Repair').length,
         ret=data.filter(c=>fsNorm(c.finalStatus)==='Return').length,
         zero=data.filter(c=>fsNorm(c.finalStatus)==='Zero').length,
         debit=data.filter(c=>fsNorm(c.finalStatus)==='Debit').length;
-  const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}${repKpi('Repair',repair,'k-repair')}${repKpi('Return',ret,'k-return')}${repKpi('Zero',zero,'k-zero')}${repKpi('Debit',debit,'k-debit')}</div>`;
+  const kpis=`<div class="rep-kpis">${repKpi('Total',total,'k-total')}`
+    +`${repKpi('Granted',granted,'k-granted')}${repKpi('WIP',wip,'k-wip')}${repKpi('Closed',closed,'k-closed')}`
+    +`${repKpi('Repair',repair,'k-repair')}${repKpi('Return',ret,'k-return')}${repKpi('Zero',zero,'k-zero')}${repKpi('Debit',debit,'k-debit')}</div>`;
   // Aging — Complaint Status not Closed (includes GRANTED, WIP and unset)
   const buckets={'0–7':0,'8–15':0,'16–30':0,'30+':0}, nowT=new Date(todayS);
   data.filter(c=>String(c.complaintStatus||'').trim().toUpperCase()!=='CLOSED').forEach(c=>{
