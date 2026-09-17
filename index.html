@@ -582,7 +582,7 @@ function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketD
 function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
 $("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("fltCStatus").value="";$("searchInput").value="";histFilter(); });
 $("resetBtn").addEventListener("click",resetForm);
-$("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printComplaint(collectForm());});
+$("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printNewComplaint(collectForm());});
 
 /* SECTION 2 */
 function cDate(c){
@@ -798,6 +798,38 @@ function printComplaint(c){
       ${row("Reviewed On",c.reviewedAt)}
     </table>
     ${imgs?`<h3>Images</h3>${imgs}`:""}
+    <script>window.onload=()=>{window.print()}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+/* New Complaint print — details + uploaded images only, fitted to a single page */
+function printNewComplaint(c){
+  const imgs=(c.images||[]).map(s=>`<img src="${driveThumb(s)}" referrerpolicy="no-referrer">`).join("");
+  const w=window.open("","_print");
+  w.document.write(`<html><head><title>${esc(c.ticketId||'New Complaint')}</title><style>
+    @page{size:A4 portrait;margin:10mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial;color:#222;font-size:11.5px;margin:0}
+    h1{color:#557e96;margin:0 0 2px;font-size:17px}.sub{color:#666;margin:0 0 8px;font-size:11px}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    td{padding:4px 7px;border:1px solid #ddd;vertical-align:top}
+    td.k{background:#eef4fa;font-weight:bold;width:150px;color:#557e96}
+    h3{margin:6px 0 5px;color:#557e96;font-size:13px}
+    .imgs{display:flex;flex-wrap:wrap;gap:6px}
+    .imgs img{width:108px;height:108px;object-fit:cover;border:1px solid #ccc;border-radius:6px}
+  </style></head><body>
+    <h1>Meena Bazaar — New Complaint</h1>
+    <p class="sub">${esc(c.storename)} (Store ${esc(c.storecode)})</p>
+    <table>
+      ${row("Ticket ID",c.ticketId)}${row("Date",c.ticketDate)}${row("Item ID",c.itemId)}
+      ${row("Article No",c.articleNo)}${row("Color",c.colorName)}${row("Contrast",c.contrast)}${row("Size",c.size)}
+      ${row("Department",c.departmentShortName)}${row("Category",c.categoryShortName)}
+      ${row("Purchased Date",c.purchasedDate)}${row("Pur Return Id",c.purReturnId)}${row("Purchase Return Date",c.soldReturnDate)}${row("Sold Date",c.soldDate)}
+      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
+      ${row("Customer Name",c.customerName)}${row("Customer Mobile Number",c.customerMobileNumber)}
+      ${row("Complaint Reason",c.complaintReason)}
+    </table>
+    ${imgs?`<h3>Complaint Images</h3><div class="imgs">${imgs}</div>`:""}
     <script>window.onload=()=>{window.print()}<\/script>
   </body></html>`);
   w.document.close();
