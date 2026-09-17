@@ -305,6 +305,10 @@
           <div class="field readonly"><label>Customer Name <span class="ro-badge">auto</span></label><input id="customerName" readonly></div>
           <div class="field readonly"><label>Customer Mobile Number <span class="ro-badge">auto</span></label><input id="customerMobileNumber" readonly></div>
           <div class="field full"><label class="req">Complaint Reason <span class="man-badge">manual</span></label><textarea id="complaintReason" rows="2" placeholder="Describe the complaint reason" required></textarea></div>
+          <div class="field full"><label class="req">Send Through <span class="man-badge">manual</span></label>
+            <select id="sendThrough" onchange="renderSendThrough()"><option value="">— Select —</option><option>Driver</option><option>Runner</option><option>Byhand</option><option>Courier</option></select>
+          </div>
+          <div id="sendThroughFields" style="display:contents"></div>
           <div class="field full">
             <label>Complaint Images <span class="man-badge">camera / gallery · max 4</span></label>
             <div class="img-grid" id="imgGrid"></div>
@@ -553,6 +557,14 @@ async function fetchItem(){
   $("apImg").src=driveThumb(d.imageUrl)||"";$("articlePreview").style.display=d.imageUrl?"block":"none";$("articlePreview")._url=d.imageUrl||"";
   toast("Details fetched.");
 }
+function renderSendThrough(){
+  const v=$("sendThrough").value, box=$("sendThroughFields");
+  const nameLabel={Driver:"Driver Name",Runner:"Runner Name",Byhand:"Person Name",Courier:"Courier Name"}[v]||"";
+  let html="";
+  if(nameLabel) html+=`<div class="field full"><label class="req">${nameLabel}</label><input id="stName" placeholder="${nameLabel}"></div>`;
+  if(v==="Courier") html+=`<div class="field full"><label class="req">Docket Number</label><input id="stDocket" placeholder="Docket number"></div>`;
+  box.innerHTML=html;
+}
 function clearItemFields(){["articleNo","colorName","contrast","size","departmentShortName","categoryShortName","soldDate","soldReturnDate","purReturnId","purchasedDate","cashmemoNo","supplierName","itemMRP","salesCost","customerName","customerMobileNumber"].forEach(i=>$(i).value="");$("articlePreview").style.display="none";}
 
 function compressImage(file,maxDim=1024,q=0.6){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>h){if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}}else{if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);resolve(cv.toDataURL('image/jpeg',q));};img.onerror=reject;img.src=fr.result;};fr.onerror=reject;fr.readAsDataURL(file);});}
@@ -567,6 +579,9 @@ $("imgInput").addEventListener("change",async e=>{const files=[...e.target.files
 $("complaintForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!$("articleNo").value){toast("Fetch item details before submitting.");return;}
+  if(!$("sendThrough").value){toast("Please select Send Through.");$("sendThrough").focus();return;}
+  if($("stName") && !$("stName").value.trim()){toast("Please enter the name for Send Through.");$("stName").focus();return;}
+  if($("sendThrough").value==="Courier" && (!$("stDocket")||!$("stDocket").value.trim())){toast("Please enter the Docket Number.");if($("stDocket"))$("stDocket").focus();return;}
   const payload=collectForm();
   const btn=e.submitter||$("complaintForm").querySelector('button[type=submit]');
   const prev=btn?btn.textContent:"";
@@ -578,8 +593,8 @@ $("complaintForm").addEventListener("submit",async e=>{
   if(res&&res.ok){toast("Complaint "+(res.ticketId||payload.ticketId)+" submitted.");resetForm();await newTicket();}
   else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
-function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,customerName:$("customerName").value,customerMobileNumber:$("customerMobileNumber").value,complaintReason:$("complaintReason").value,images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
-function resetForm(){$("complaintForm").reset();clearItemFields();currentImages=[];renderImgGrid();}
+function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,customerName:$("customerName").value,customerMobileNumber:$("customerMobileNumber").value,complaintReason:$("complaintReason").value,sendThrough:$("sendThrough").value,sendThroughName:($("stName")?$("stName").value:""),docketNumber:($("stDocket")?$("stDocket").value:""),images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
+function resetForm(){$("complaintForm").reset();clearItemFields();$("sendThroughFields").innerHTML="";currentImages=[];renderImgGrid();}
 $("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("fltCStatus").value="";$("searchInput").value="";histFilter(); });
 $("resetBtn").addEventListener("click",resetForm);
 $("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printNewComplaint(collectForm());});
@@ -789,6 +804,7 @@ function printComplaint(c){
       ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
       ${row("Customer Name",c.customerName)}${row("Customer Mobile Number",c.customerMobileNumber)}
       ${row("Complaint Reason",c.complaintReason)}
+      ${row("Send Through",c.sendThrough)}${row("Send Through Name",c.sendThroughName)}${c.docketNumber?row("Docket Number",c.docketNumber):''}
     </table>
     <h3>Follow-up / Manager Review</h3>
     <table>
@@ -828,6 +844,7 @@ function printNewComplaint(c){
       ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
       ${row("Customer Name",c.customerName)}${row("Customer Mobile Number",c.customerMobileNumber)}
       ${row("Complaint Reason",c.complaintReason)}
+      ${row("Send Through",c.sendThrough)}${row("Send Through Name",c.sendThroughName)}${c.docketNumber?row("Docket Number",c.docketNumber):''}
     </table>
     ${imgs?`<h3>Complaint Images</h3><div class="imgs">${imgs}</div>`:""}
     <script>window.onload=()=>{window.print()}<\/script>
