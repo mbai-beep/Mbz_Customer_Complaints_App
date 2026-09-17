@@ -67,7 +67,7 @@
   .topbar .store span{font-size:11.5px;opacity:.85}
   .role-badge{font-size:10px;font-weight:800;text-transform:uppercase;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:20px;margin-left:6px}
   .topbar .logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px}
-  .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:20}
+  .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:20;max-width:var(--wrap);width:100%;margin:0 auto}
   .tabs button{flex:1 1 0;min-width:0;min-height:48px;padding:6px 6px;border:none;background:transparent;font-weight:700;font-size:12.5px;line-height:1.15;color:var(--muted);border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;text-align:center}
   .tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
   @media(max-width:420px){.tabs button{font-size:11px;padding:6px 3px}}
@@ -594,7 +594,7 @@ $("complaintForm").addEventListener("submit",async e=>{
   else{toast("Submit failed: "+((res&&res.error)||"check /api/health"));}
 });
 function collectForm(){return{ticketId:$("ticketId").value,ticketDate:$("ticketDate").value,storecode:SESSION.storecode,storename:SESSION.storename,itemId:$("itemId").value.trim(),articleNo:$("articleNo").value,imageUrl:$("articlePreview")._url||"",colorName:$("colorName").value,contrast:$("contrast").value,size:$("size").value,departmentShortName:$("departmentShortName").value,categoryShortName:$("categoryShortName").value,soldDate:$("soldDate").value,soldReturnDate:$("soldReturnDate").value,purReturnId:$("purReturnId").value,purchasedDate:$("purchasedDate").value,cashmemoNo:$("cashmemoNo").value,supplierName:$("supplierName").value,itemMRP:$("itemMRP").value,salesCost:$("salesCost").value,customerName:$("customerName").value,customerMobileNumber:$("customerMobileNumber").value,complaintReason:$("complaintReason").value,sendThrough:$("sendThrough").value,sendThroughName:($("stName")?$("stName").value:""),docketNumber:($("stDocket")?$("stDocket").value:""),images:[...currentImages],approver:"",remarks:"",challanNo:"",debitNo:"",status:"Pending"};}
-function resetForm(){$("complaintForm").reset();clearItemFields();$("sendThroughFields").innerHTML="";currentImages=[];renderImgGrid();}
+function resetForm(){const tid=$("ticketId").value,tdt=$("ticketDate").value;$("complaintForm").reset();clearItemFields();$("sendThroughFields").innerHTML="";currentImages=[];renderImgGrid();$("ticketId").value=tid;$("ticketDate").value=tdt;}
 $("fltClear").addEventListener("click",()=>{ $("fltFrom").value="";$("fltTo").value="";$("fltStatus").value="";$("fltCStatus").value="";$("searchInput").value="";histFilter(); });
 $("resetBtn").addEventListener("click",resetForm);
 $("printNewBtn").addEventListener("click",()=>{if(!$("articleNo").value){toast("Fetch item details first.");return;}printNewComplaint(collectForm());});
