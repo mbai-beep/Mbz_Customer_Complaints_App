@@ -538,6 +538,10 @@ function configureForRole(){
   $("histTitle").textContent = isStore ? "My Complaints" : "All Complaints (all stores)";
   $("histDesc").textContent  = isStore ? "Your submitted complaints. Add follow-up details and print."
                                        : (isAdmin ? "All complaints across stores. Review, print or delete." : "All complaints across stores. Review and print.");
+  // Employees don't see sensitive commercial fields in New Complaint (managers/admin do)
+  ["supplierName","salesCost","purchasedDate","soldReturnDate","purReturnId"].forEach(id=>{
+    const f=$(id)&&$(id).closest('.field'); if(f) f.style.display = isStore ? 'none' : '';
+  });
   newTicket();
   showTab(1);
   if(isAdmin) loadUsers();
