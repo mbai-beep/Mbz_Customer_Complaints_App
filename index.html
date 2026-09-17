@@ -315,7 +315,7 @@
           </div>
           <div id="sendThroughFields" style="display:contents"></div>
           <div class="field full">
-            <label>Complaint Images <span class="man-badge">camera / gallery · max 4</span></label>
+            <label class="req">Complaint Images <span class="man-badge">camera / gallery · min 1, max 4</span></label>
             <div class="img-grid" id="imgGrid"></div>
             <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
             <div class="help">Tap a slot to capture from mobile camera or choose from gallery.</div>
@@ -620,6 +620,7 @@ $("complaintForm").addEventListener("submit",async e=>{
   if(!$("sendThrough").value){toast("Please select Send Through.");$("sendThrough").focus();return;}
   if($("stName") && !$("stName").value.trim()){toast("Please enter the name for Send Through.");$("stName").focus();return;}
   if($("sendThrough").value==="Courier" && (!$("stDocket")||!$("stDocket").value.trim())){toast("Please enter the Docket Number.");if($("stDocket"))$("stDocket").focus();return;}
+  if(!currentImages.length){toast("Please add at least one Complaint Image.");return;}
   const payload=collectForm();
   const btn=e.submitter||$("complaintForm").querySelector('button[type=submit]');
   const prev=btn?btn.textContent:"";
