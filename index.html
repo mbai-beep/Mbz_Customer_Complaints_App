@@ -823,6 +823,7 @@ async function doResetPassword(){
 
 /* PRINT */
 function printComplaint(c){
+  const emp=SESSION.role==='employee';   // employees don't see sensitive commercial fields
   const imgs=(c.images||[]).map(s=>`<img src="${driveThumb(s)}" referrerpolicy="no-referrer" style="width:120px;height:120px;object-fit:cover;border:1px solid #ccc;border-radius:6px;margin:4px">`).join("");
   const w=window.open("","_print");
   w.document.write(`<html><head><title>${esc(c.ticketId)}</title><style>
@@ -839,8 +840,8 @@ function printComplaint(c){
       ${row("Ticket ID",c.ticketId)}${row("Date",c.ticketDate)}${row("Item ID",c.itemId)}
       ${row("Article No",c.articleNo)}${row("Color",c.colorName)}${row("Contrast",c.contrast)}${row("Size",c.size)}
       ${row("Department",c.departmentShortName)}${row("Category",c.categoryShortName)}
-      ${row("Purchased Date",c.purchasedDate)}${row("Pur Return Id",c.purReturnId)}${row("Purchase Return Date",c.soldReturnDate)}${row("Sold Date",c.soldDate)}
-      ${row("Cashmemo No",c.cashmemoNo)}${row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${row("Sales Cost",c.salesCost)}
+      ${emp?'':row("Purchased Date",c.purchasedDate)}${emp?'':row("Pur Return Id",c.purReturnId)}${emp?'':row("Purchase Return Date",c.soldReturnDate)}${row("Sold Date",c.soldDate)}
+      ${row("Cashmemo No",c.cashmemoNo)}${emp?'':row("Supplier",c.supplierName)}${row("Item MRP",c.itemMRP)}${emp?'':row("Sales Cost",c.salesCost)}
       ${row("Customer Name",c.customerName)}${row("Customer Mobile Number",c.customerMobileNumber)}
       ${row("Complaint Reason",c.complaintReason)}
       ${row("Send Through",c.sendThrough)}${row("Send Through Name",c.sendThroughName)}${c.docketNumber?row("Docket Number",c.docketNumber):''}
@@ -859,6 +860,7 @@ function printComplaint(c){
 }
 /* New Complaint print — details + uploaded images only, fitted to a single page */
 function printNewComplaint(c){
+  const emp=SESSION.role==='employee';   // employees don't see sensitive commercial fields
   const imgs=(c.images||[]).map(s=>`<img src="${driveThumb(s)}" referrerpolicy="no-referrer">`).join("");
   const kv=(k,v)=>`<div class="i"><b>${esc(k)}</b><span>${esc(v||'—')}</span></div>`;
   const w=window.open("","_print");
@@ -884,11 +886,11 @@ function printNewComplaint(c){
       ${kv("Item ID",c.itemId)}${kv("Article No",c.articleNo)}
       ${kv("Color",c.colorName)}${kv("Contrast",c.contrast)}
       ${kv("Size",c.size)}${kv("Department",c.departmentShortName)}
-      ${kv("Category",c.categoryShortName)}${kv("Purchased Date",c.purchasedDate)}
-      ${kv("Pur Return Id",c.purReturnId)}${kv("Purchase Return Date",c.soldReturnDate)}
+      ${kv("Category",c.categoryShortName)}${emp?'':kv("Purchased Date",c.purchasedDate)}
+      ${emp?'':kv("Pur Return Id",c.purReturnId)}${emp?'':kv("Purchase Return Date",c.soldReturnDate)}
       ${kv("Sold Date",c.soldDate)}${kv("Cashmemo No",c.cashmemoNo)}
-      ${kv("Supplier",c.supplierName)}${kv("Item MRP",c.itemMRP)}
-      ${kv("Sales Cost",c.salesCost)}${kv("Customer Name",c.customerName)}
+      ${emp?'':kv("Supplier",c.supplierName)}${kv("Item MRP",c.itemMRP)}
+      ${emp?'':kv("Sales Cost",c.salesCost)}${kv("Customer Name",c.customerName)}
       ${kv("Customer Mobile Number",c.customerMobileNumber)}${kv("Send Through",c.sendThrough)}
       ${kv("Send Through Name",c.sendThroughName)}${c.docketNumber?kv("Docket Number",c.docketNumber):''}
       <div class="i full"><b>Complaint Reason</b><span>${esc(c.complaintReason||'—')}</span></div>
