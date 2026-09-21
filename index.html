@@ -132,6 +132,14 @@
   .followup-box{background:#eef4fa;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px}
   .followup-box b{color:var(--brand-dark)}
   .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  .card-img-wrap{position:relative;cursor:pointer;flex:0 0 auto}
+  .card-img-wrap .img-count{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px}
+  .lb-box{position:relative;max-width:94vw;max-height:90vh;display:flex;align-items:center;justify-content:center}
+  #lbImg{max-width:94vw;max-height:86vh;border-radius:10px;background:#000;object-fit:contain}
+  .lb-close{position:absolute;top:-6px;right:-6px;width:38px;height:38px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;font-size:22px;cursor:pointer;z-index:2}
+  .lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer}
+  .lb-prev{left:6px}.lb-next{right:6px}
+  .lb-count{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px}
   .viewmore-wrap{text-align:center;padding:14px 0 4px}
   .viewmore-wrap .btn{width:auto;display:inline-block;padding:11px 22px}
   .utable{width:100%;border-collapse:collapse;font-size:13px}
@@ -418,6 +426,17 @@
   </div>
 </div>
 
+<!-- image viewer (lightbox) -->
+<div id="lightbox" class="modal-back hidden" onclick="if(event.target===this)closeLightbox()">
+  <div class="lb-box">
+    <button class="lb-close" onclick="closeLightbox()">&times;</button>
+    <button class="lb-nav lb-prev" id="lbPrev" onclick="lbPrev()">&#10094;</button>
+    <img id="lbImg" alt="complaint image" referrerpolicy="no-referrer">
+    <button class="lb-nav lb-next" id="lbNext" onclick="lbNext()">&#10095;</button>
+    <div class="lb-count" id="lbCount"></div>
+  </div>
+</div>
+
 <!-- camera capture modal -->
 <div id="cameraModal" class="modal-back hidden">
   <div class="modal" style="max-width:520px">
@@ -692,7 +711,7 @@ async function renderHistory(refetch=true){
     const fu=reviewed?`<div class="followup-box"><b>Manager Review</b><br>Approver: ${esc(c.approver||'—')} · Colour: ${esc(c.followup?.color||'—')} · Reason: ${esc(c.followup?.reason||'—')}<br>Remarks: ${esc(c.followup?.remarks||'—')}<br>Challan: ${esc(c.challanNo||'—')} · Debit/PR: ${esc(c.debitNo||'—')}<br>Final Status: ${esc(c.finalStatus||'—')} · Complaint Status: ${esc(c.complaintStatus||'—')}<br>Reviewed On: ${esc(c.reviewedAt||'—')}</div>`:"";
     return `<div class="complaint">
       <div class="head"><div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div>${all?`<div class="store-tag">${esc(c.storecode)} · ${esc(c.storename)}</div>`:""}</div><div class="pill-wrap"><span class="pill ${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span>${c.complaintStatus?`<span class="pill cstatus cs-${esc(String(c.complaintStatus).toLowerCase())}">${esc(c.complaintStatus)}</span>`:""}</div></div>
-      <div class="body">${img?`<img src="${img}" referrerpolicy="no-referrer">`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
+      <div class="body">${img?`<div class="card-img-wrap" onclick='openLightbox(${JSON.stringify(c.ticketId)})' title="Click to view images"><img src="${img}" referrerpolicy="no-referrer">${(c.images&&c.images.length>1)?`<span class="img-count">+${c.images.length-1}</span>`:""}</div>`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
       ${fu}
       <div class="foot">
         ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
@@ -725,6 +744,23 @@ async function saveComplaintStatus(tid,val){
   const res=await API.saveFollowup({ticketId:tid,complaintStatus:val});
   if(res&&res.ok){toast("Complaint status "+(val||"cleared")+".");renderHistory();}else toast("Update failed: "+((res&&res.error)||""));
 }
+/* Image viewer (lightbox) — available to all roles */
+let LB_IMAGES=[], LB_INDEX=0;
+function openLightbox(tid){
+  const c=(STORE.complaints||[]).find(x=>x.ticketId===tid); if(!c) return;
+  LB_IMAGES=(c.images||[]).map(driveThumb).filter(Boolean);
+  if(!LB_IMAGES.length){toast("No images for this complaint.");return;}
+  LB_INDEX=0; lbShow(); $("lightbox").classList.remove("hidden");
+}
+function lbShow(){
+  $("lbImg").src=LB_IMAGES[LB_INDEX]||"";
+  $("lbCount").textContent=(LB_INDEX+1)+" / "+LB_IMAGES.length;
+  const multi=LB_IMAGES.length>1;
+  $("lbPrev").style.display=multi?"":"none"; $("lbNext").style.display=multi?"":"none";
+}
+function lbNext(){ LB_INDEX=(LB_INDEX+1)%LB_IMAGES.length; lbShow(); }
+function lbPrev(){ LB_INDEX=(LB_INDEX-1+LB_IMAGES.length)%LB_IMAGES.length; lbShow(); }
+function closeLightbox(){ $("lightbox").classList.add("hidden"); $("lbImg").src=""; }
 function printById(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(c)printComplaint(c);}
 async function deleteComplaint(tid){
   if(!confirm("Delete complaint "+tid+"? This cannot be undone."))return;
