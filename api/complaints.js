@@ -113,7 +113,7 @@ async function list(req, res) {
         storecode: field(r, 'StoreCode'), storename: field(r, 'StoreName'),
         itemId: field(r, 'ItemID'), articleNo: field(r, 'ArticleNo'), imageUrl: field(r, 'ImageURL'),
         colorName: field(r, 'ColorName'), contrast: field(r, 'Contrast'), size: field(r, 'Size'),
-        soldDate: field(r, 'SoldDate'), soldReturnDate: field(r, 'SoldReturnDate'),
+        soldDate: field(r, 'SoldDate'), soldReturnDate: field(r, 'PurReturnDate', 'SoldReturnDate'),
         purchasedDate: field(r, 'PurchasedDate'), cashmemoNo: field(r, 'CashmemoNo'),
         supplierName: field(r, 'SupplierName'), complaintReason: field(r, 'ComplaintReason'),
         approver: field(r, 'Approver'), remarks: field(r, 'Remarks'),
