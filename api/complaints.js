@@ -109,6 +109,7 @@ async function list(req, res) {
       const images = ['Image1', 'Image2', 'Image3', 'Image4'].map(k => field(r, k)).filter(Boolean);
       const fc = field(r, 'FollowupColor'), fr = field(r, 'FollowupReason'), fm = field(r, 'FollowupRemarks');
       return {
+        rowId: r._row,   // unique sheet row — disambiguates duplicate TicketIDs
         ticketId: field(r, 'TicketID'), ticketDate: field(r, 'TicketDate'),
         storecode: field(r, 'StoreCode'), storename: field(r, 'StoreName'),
         itemId: field(r, 'ItemID'), articleNo: field(r, 'ArticleNo'), imageUrl: field(r, 'ImageURL'),

@@ -15,10 +15,16 @@ module.exports = async (req, res) => {
   if (!b.ticketId) return res.json({ ok: false, error: 'ticketId required' });
   try {
     const { rows } = await getRows(TABS.complaints);
-    // Target the LAST row with this TicketID (the newest one, which is what the
-    // history list shows first) so a legacy duplicate ID can't misdirect the write.
-    const matches = rows.filter(r => String(field(r, 'TicketID')).trim() === String(b.ticketId).trim());
-    const row = matches.length ? matches[matches.length - 1] : null;
+    let row = null;
+    if (b.rowId) {
+      // Exact row match (handles duplicate TicketIDs correctly).
+      row = rows.find(r => r._row === Number(b.rowId)) || null;
+    }
+    if (!row) {
+      // Fallback: last row with this TicketID (newest).
+      const matches = rows.filter(r => String(field(r, 'TicketID')).trim() === String(b.ticketId).trim());
+      row = matches.length ? matches[matches.length - 1] : null;
+    }
     if (!row) return res.json({ ok: false, error: 'Ticket not found' });
     // Only update the fields actually sent, so a card-level Complaint-Status change
     // doesn't blank out an existing full review (and vice-versa).

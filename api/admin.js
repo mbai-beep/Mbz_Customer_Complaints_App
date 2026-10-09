@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
         return res.json({ ok: true });
       }
       case 'deleteComplaint': {
-        const ok = await deleteComplaintByTicket(String(b.ticketId || ''));
+        const ok = await deleteComplaintByTicket(String(b.ticketId || ''), b.rowId);
         return res.json({ ok });
       }
       default:

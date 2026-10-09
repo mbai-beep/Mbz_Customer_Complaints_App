@@ -413,6 +413,7 @@
   <div class="modal">
     <h3>Manager Review</h3>
     <input type="hidden" id="fuTicket">
+    <input type="hidden" id="fuRow">
     <div class="field"><label class="req">Approval Manager</label><select id="fuApprover"><option value="">— Select manager —</option><option>Chetna</option><option>Sunder</option><option>Prapti</option><option>Vinita</option></select></div>
     <div class="field"><label class="req">Status</label><select id="fuStatus"><option value="">— Select —</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
     <div class="field"><label class="req">Final Status</label><select id="fuFinal"><option value="">— Select —</option><option>Repair</option><option>Return</option><option>Zero</option><option>Debit</option></select></div>
@@ -726,18 +727,18 @@ async function renderHistory(refetch=true){
     const fu=reviewed?`<div class="followup-box"><b>Manager Review</b><br>Approver: ${esc(c.approver||'—')} · Colour: ${esc(c.followup?.color||'—')} · Reason: ${esc(c.followup?.reason||'—')}<br>Remarks: ${esc(c.followup?.remarks||'—')}<br>Challan: ${esc(c.challanNo||'—')} · Debit/PR: ${esc(c.debitNo||'—')}<br>Final Status: ${esc(c.finalStatus||'—')} · Complaint Status: ${esc(c.complaintStatus||'—')}<br>Reviewed On: ${esc(c.reviewedAt||'—')}</div>`:"";
     return `<div class="complaint">
       <div class="head"><div><div class="tid">${esc(c.ticketId)}</div><div class="when">${esc(c.ticketDate)}</div>${all?`<div class="store-tag">${esc(c.storecode)} · ${esc(c.storename)}</div>`:""}</div><div class="pill-wrap"><span class="pill ${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span>${c.complaintStatus?`<span class="pill cstatus cs-${esc(String(c.complaintStatus).toLowerCase())}">${esc(c.complaintStatus)}</span>`:""}</div></div>
-      <div class="body">${img?`<div class="card-img-wrap" onclick='openLightbox(${JSON.stringify(c.ticketId)})' title="Click to view images"><img src="${img}" referrerpolicy="no-referrer">${(c.images&&c.images.length>1)?`<span class="img-count">+${c.images.length-1}</span>`:""}</div>`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
+      <div class="body">${img?`<div class="card-img-wrap" onclick='openLightbox(${JSON.stringify(c.rowId)})' title="Click to view images"><img src="${img}" referrerpolicy="no-referrer">${(c.images&&c.images.length>1)?`<span class="img-count">+${c.images.length-1}</span>`:""}</div>`:""}<div class="kv"><b>Item</b><span>${esc(c.itemId)}</span><b>Article</b><span>${esc(c.articleNo)}</span><b>Color</b><span>${esc(c.colorName)}</span><b>Category</b><span>${esc(c.categoryShortName)}</span><b>Reason</b><span>${esc(c.complaintReason)}</span></div></div>
       ${fu}
       <div class="foot">
-        ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.ticketId)})'>Manager Review</button>`:""}
-        ${canReview?`<select class="cs-select" onchange='saveComplaintStatus(${JSON.stringify(c.ticketId)},this.value)'>
+        ${canReview?`<button class="btn" onclick='openFollowup(${JSON.stringify(c.rowId)})'>Manager Review</button>`:""}
+        ${canReview?`<select class="cs-select" onchange='saveComplaintStatus(${JSON.stringify(c.rowId)},this.value)'>
           <option value="">Complaint Status…</option>
           <option ${c.complaintStatus==='GRANTED'?'selected':''}>GRANTED</option>
           <option ${c.complaintStatus==='WIP'?'selected':''}>WIP</option>
           <option ${c.complaintStatus==='CLOSED'?'selected':''}>CLOSED</option>
         </select>`:""}
-        <button class="btn secondary" onclick='printById(${JSON.stringify(c.ticketId)})'>Print</button>
-        ${isAdmin?`<button class="btn danger" onclick='deleteComplaint(${JSON.stringify(c.ticketId)})'>Delete</button>`:""}
+        <button class="btn secondary" onclick='printById(${JSON.stringify(c.rowId)})'>Print</button>
+        ${isAdmin?`<button class="btn danger" onclick='deleteComplaint(${JSON.stringify(c.rowId)})'>Delete</button>`:""}
       </div>
     </div>`;
   }).join("")
@@ -745,24 +746,25 @@ async function renderHistory(refetch=true){
       ? `<div class="viewmore-wrap"><button class="btn secondary" onclick="viewMoreHistory()">View more complaints (${data.length-HIST_LIMIT} more)</button></div>`
       : (HIST_LIMIT>10 && data.length>10 ? `<div class="viewmore-wrap"><span class="help">Showing all ${data.length} complaints.</span></div>` : ""));
 }
-function openFollowup(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(!c)return;$("fuTicket").value=tid;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuFinal").value=c.finalStatus||"";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
+function openFollowup(rid){const c=STORE.complaints.find(x=>x.rowId===rid);if(!c)return;$("fuTicket").value=c.ticketId;$("fuRow").value=c.rowId;$("fuApprover").value=c.approver||"";$("fuStatus").value=c.status||"Pending";$("fuFinal").value=c.finalStatus||"";$("fuColor").value=c.followup?.color||"";$("fuReason").value=c.followup?.reason||"";$("fuRemarks").value=c.followup?.remarks||"";$("fuChallan").value=c.challanNo||"";$("fuDebit").value=c.debitNo||"";$("followupModal").classList.remove("hidden");}
 function closeFollowup(){$("followupModal").classList.add("hidden");}
 async function saveFollowup(){
-  const tid=$("fuTicket").value;
+  const tid=$("fuTicket").value, rid=$("fuRow").value;
   const required=[["fuApprover","Approval Manager"],["fuStatus","Status"],["fuFinal","Final Status"]];
   for(const [id,label] of required){ if(!$(id).value.trim()){ toast("Please fill: "+label); $(id).focus(); return; } }
-  const payload={ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
+  const payload={rowId:rid,ticketId:tid,approver:$("fuApprover").value,status:$("fuStatus").value,finalStatus:$("fuFinal").value,color:$("fuColor").value,reason:$("fuReason").value,remarks:$("fuRemarks").value,challanNo:$("fuChallan").value,debitNo:$("fuDebit").value};
   const res=await API.saveFollowup(payload);
   if(res&&res.ok){closeFollowup();renderHistory();toast("Review saved.");}else toast("Save failed: "+((res&&res.error)||""));
 }
-async function saveComplaintStatus(tid,val){
-  const res=await API.saveFollowup({ticketId:tid,complaintStatus:val});
+async function saveComplaintStatus(rid,val){
+  const c=STORE.complaints.find(x=>x.rowId===rid);
+  const res=await API.saveFollowup({rowId:rid,ticketId:c?c.ticketId:'',complaintStatus:val});
   if(res&&res.ok){toast("Complaint status "+(val||"cleared")+".");renderHistory();}else toast("Update failed: "+((res&&res.error)||""));
 }
 /* Image viewer (lightbox) — available to all roles */
 let LB_IMAGES=[], LB_INDEX=0;
-function openLightbox(tid){
-  const c=(STORE.complaints||[]).find(x=>x.ticketId===tid); if(!c) return;
+function openLightbox(rid){
+  const c=(STORE.complaints||[]).find(x=>x.rowId===rid); if(!c) return;
   LB_IMAGES=(c.images||[]).map(driveThumb).filter(Boolean);
   if(!LB_IMAGES.length){toast("No images for this complaint.");return;}
   LB_INDEX=0; lbShow(); $("lightbox").classList.remove("hidden");
@@ -776,10 +778,11 @@ function lbShow(){
 function lbNext(){ LB_INDEX=(LB_INDEX+1)%LB_IMAGES.length; lbShow(); }
 function lbPrev(){ LB_INDEX=(LB_INDEX-1+LB_IMAGES.length)%LB_IMAGES.length; lbShow(); }
 function closeLightbox(){ $("lightbox").classList.add("hidden"); $("lbImg").src=""; }
-function printById(tid){const c=STORE.complaints.find(x=>x.ticketId===tid);if(c)printComplaint(c);}
-async function deleteComplaint(tid){
+function printById(rid){const c=STORE.complaints.find(x=>x.rowId===rid);if(c)printComplaint(c);}
+async function deleteComplaint(rid){
+  const c=STORE.complaints.find(x=>x.rowId===rid); const tid=c?c.ticketId:'';
   if(!confirm("Delete complaint "+tid+"? This cannot be undone."))return;
-  const res=await API.admin('deleteComplaint',{ticketId:tid});
+  const res=await API.admin('deleteComplaint',{rowId:rid,ticketId:tid});
   if(res&&res.ok){toast("Deleted "+tid);renderHistory();}else toast("Delete failed: "+((res&&res.error)||""));
 }
 
