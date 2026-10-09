@@ -508,7 +508,9 @@ function driveThumb(u){
   if(!id){ m=u.match(/\/d\/([-\w]{20,})/); if(m) id=m[1]; }   // /d/ID/ or /file/d/ID
   if(!id){ m=u.match(/thumbnail\?[^]*?id=([-\w]{20,})/); if(m) id=m[1]; }
   if(!id){ m=u.match(/([-\w]{25,})/); if(m) id=m[1]; }        // last-resort
-  return id?`https://drive.google.com/thumbnail?id=${id}&sz=w800`:u;
+  // Serve the actual file content via googleusercontent (more reliable than Drive's
+  // /thumbnail endpoint, which can return a stale/wrong cached thumbnail).
+  return id?`https://lh3.googleusercontent.com/d/${id}=w800`:u;
 }
 
 /* LOGIN */
