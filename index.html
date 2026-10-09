@@ -511,7 +511,7 @@ function driveThumb(u){
   // Serve via our own backend proxy (service account) — reliable regardless of
   // per-file public sharing or Google's thumbnail CDN. Absolute URL so it also
   // works inside the print windows (which have no page origin).
-  return id?`${location.origin}/api/image?id=${id}`:u;
+  return id?`${location.origin}/api/image?id=${id}&v=2`:u;
 }
 
 /* LOGIN */
