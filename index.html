@@ -67,11 +67,12 @@
   .topbar .store span{font-size:11.5px;opacity:.85}
   .role-badge{font-size:10px;font-weight:800;text-transform:uppercase;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:20px;margin-left:6px}
   .topbar .logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px}
-  .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:20;max-width:var(--wrap);width:100%;margin:0 auto}
-  .tabs button{flex:1 1 0;min-width:0;min-height:48px;padding:6px 6px;border:none;background:transparent;font-weight:700;font-size:12.5px;line-height:1.15;color:var(--muted);border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;text-align:center}
-  .tabs button.active{color:var(--brand);border-bottom-color:var(--brand)}
-  @media(max-width:420px){.tabs button{font-size:11px;padding:6px 3px}}
-  .page{padding:16px;max-width:var(--wrap);margin:0 auto;width:100%;flex:1}
+  .tabs{display:flex;background:var(--card);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:var(--wrap);width:100%;margin:0 auto;box-shadow:0 -3px 12px rgba(0,0,0,.08)}
+  .tabs button{flex:1 1 0;min-width:0;min-height:58px;padding:7px 4px 8px;border:none;background:transparent;font-weight:700;font-size:11px;line-height:1.1;color:var(--muted);border-top:3px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center}
+  .tabs button .ico{font-size:20px;line-height:1}
+  .tabs button.active{color:var(--brand);border-top-color:var(--brand)}
+  @media(max-width:420px){.tabs button{font-size:10px;padding:7px 2px 8px}}
+  .page{padding:16px 16px 84px;max-width:var(--wrap);margin:0 auto;width:100%;flex:1}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
   .card h2{margin:0 0 4px;font-size:16px;color:var(--brand-dark)}
   .card .desc{margin:0 0 16px;color:var(--muted);font-size:13px}
@@ -266,12 +267,6 @@
     <button class="logout" id="logoutBtn">Logout</button>
   </div>
 
-  <div class="tabs">
-    <button id="tabBtn1" onclick="showTab(1)">New Complaint</button>
-    <button id="tabBtn2" onclick="showTab(2)">All Complaints History</button>
-    <button id="tabBtn4" onclick="showTab(4)">Report</button>
-    <button id="tabBtn3" class="hidden" onclick="showTab(3)">Admin</button>
-  </div>
 
   <!-- SECTION 1 -->
   <div class="page hidden" id="tab1">
@@ -404,6 +399,13 @@
     </div>
     <div id="reportBody"></div>
   </div>
+
+  <div class="tabs">
+    <button id="tabBtn1" onclick="showTab(1)"><span class="ico">📝</span><span>New Complaint</span></button>
+    <button id="tabBtn2" onclick="showTab(2)"><span class="ico">📋</span><span>History</span></button>
+    <button id="tabBtn4" onclick="showTab(4)"><span class="ico">📊</span><span>Report</span></button>
+    <button id="tabBtn3" class="hidden" onclick="showTab(3)"><span class="ico">⚙️</span><span>Admin</span></button>
+  </div>
 </div>
 
 <!-- manager review modal -->
@@ -497,7 +499,17 @@ function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");cle
 function fmtNow(){return new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 /* convert a Google Drive link to an inline-renderable thumbnail URL */
-function driveThumb(u){ if(!u)return''; u=String(u); if(!/drive\.google\.com|googleusercontent\.com/i.test(u)) return u; const m=u.match(/[-\w]{25,}/); return m?`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`:u; }
+function driveThumb(u){
+  if(!u) return ''; u=String(u);
+  if(!/drive\.google\.com|googleusercontent\.com/i.test(u)) return u;
+  let id='';
+  let m=u.match(/[?&]id=([-\w]{20,})/);      // uc?export=view&id=ID (canonical)
+  if(m) id=m[1];
+  if(!id){ m=u.match(/\/d\/([-\w]{20,})/); if(m) id=m[1]; }   // /d/ID/ or /file/d/ID
+  if(!id){ m=u.match(/thumbnail\?[^]*?id=([-\w]{20,})/); if(m) id=m[1]; }
+  if(!id){ m=u.match(/([-\w]{25,})/); if(m) id=m[1]; }        // last-resort
+  return id?`https://drive.google.com/thumbnail?id=${id}&sz=w800`:u;
+}
 
 /* LOGIN */
 $("loginForm").addEventListener("submit",async e=>{
